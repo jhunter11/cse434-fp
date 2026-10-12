@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CaptionBench | Image captioning workbench</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header><a class="wordmark" href="/">CaptionBench<span>↗</span></a><span class="header-note">Image captioning research workbench</span><a href="https://github.com/jhunter11/cse434-fp" target="_blank" rel="noopener">Source &amp; methods</a></header>
+  <main>
+    <section class="intro"><h1>What does the<br>model see?</h1><p>Generate a caption. Compare it with human descriptions. Study where the scores agree with what you see.</p></section>
+    <nav aria-label="Workspace" role="tablist"><button class="tab active" role="tab" aria-controls="demo" id="demo-tab" aria-selected="true">Caption an image</button><button class="tab" role="tab" aria-controls="gallery" id="gallery-tab" aria-selected="false">Comparison gallery</button></nav>
+    <section id="demo" role="tabpanel" aria-labelledby="demo-tab" class="workspace">
+      <div class="image-panel"><label for="image" id="drop-zone"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true"><rect x="5" y="5" width="34" height="34" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m6 32 10-10 8 7 6-10 8 13" stroke="currentColor" stroke-width="1.5"/></svg><strong>Choose an image to explore</strong><span>PNG, JPEG, or WebP · up to 10 MB</span><img id="preview" alt="Selected image preview" hidden></label><input id="image" type="file" accept="image/png,image/jpeg,image/webp"><p class="privacy">The local server processes your image. The upload is deleted after the request.</p></div>
+      <div class="caption-panel"><label for="model">Captioning model</label><select id="model"><option value="blip-base">BLIP base</option><option value="blip-large">BLIP large · larger download</option><option value="generic">Generic caption · negative control</option></select><p class="model-note" id="model-note">A pretrained image captioner from Salesforce. The first request downloads the model weights.</p><button id="generate" class="primary" disabled>Generate caption <span aria-hidden="true">→</span></button><div id="status" role="status" aria-live="polite">Choose an image to start.</div><div class="result" id="result" hidden><span>Generated caption</span><p id="caption-text"></p><div id="metadata"></div></div><div class="scope"><h2>A starting point for comparison</h2><p>This demo runs local inference. A single caption does not establish model quality. Use the fixed test split and human rating protocol for the study.</p></div></div>
+    </section>
+    <section id="gallery" role="tabpanel" aria-labelledby="gallery-tab" hidden><div class="gallery-heading"><h2>Saved model comparisons</h2><p>Images and references come from your configured test manifest.</p></div><p id="gallery-status" role="status"></p><div id="gallery-items"></div></section>
+    <footer><span>CSE434 · Open research implementation</span><span>BLIP base baseline / Flickr8k study planned</span></footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

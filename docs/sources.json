@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-12",
+  "scope": "Primary sources for a Flickr8k released-model caption comparison and metric agreement study",
+  "evidence_status": "Literature and method planning only. No project model results.",
+  "sources": [
+    {
+      "id": "flickr8k-2013",
+      "title": "Framing Image Description as a Ranking Task: Data, Models and Evaluation Metrics",
+      "authors": ["Micah Hodosh", "Peter Young", "Julia Hockenmaier"],
+      "year": 2013,
+      "type": "research_paper",
+      "url": "https://www.jair.org/index.php/jair/article/view/10833",
+      "doi": "10.1613/jair.3994",
+      "supports": ["Flickr8k benchmark origin", "8,000 benchmark images and five captions per image", "Earlier caption ranking and human evaluation work"],
+      "limits": "Ranking existing captions differs from free-form caption generation. Acquired local split files still need validation."
+    },
+    {
+      "id": "flickr8k-source-notices",
+      "title": "Original Flickr8k download and caption notices",
+      "authors": ["Julia Hockenmaier research group"],
+      "year": 2013,
+      "type": "dataset_author_notices",
+      "url": "https://hockenmaier.cs.illinois.edu/Framing_Image_Description/KCCA.html",
+      "caption_notice_url": "https://hockenmaier.cs.illinois.edu/8k-pictures.html",
+      "supports": ["Authors do not own image copyright", "Educational and noncommercial research download context", "Separate Attribution-ShareAlike caption notice"],
+      "limits": "These notices do not grant a new blanket license to every image. A third-party mirror label does not replace source terms."
+    },
+    {
+      "id": "blip-2022",
+      "title": "BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation",
+      "authors": ["Junnan Li", "Dongxu Li", "Caiming Xiong", "Steven Hoi"],
+      "year": 2022,
+      "type": "research_paper",
+      "url": "https://proceedings.mlr.press/v162/li22n.html",
+      "supports": ["BLIP model and training objectives", "Captioning and filtering of noisy training data", "Published caption evaluation precedent"],
+      "limits": "Published paper scores are not measurements for this repository or its proposed Flickr8k run."
+    },
+    {
+      "id": "blip-base-card",
+      "title": "Salesforce/blip-image-captioning-base model card",
+      "authors": ["Salesforce checkpoint publisher", "Hugging Face model documentation"],
+      "year": null,
+      "type": "official_checkpoint_documentation",
+      "url": "https://huggingface.co/Salesforce/blip-image-captioning-base",
+      "checkpoint": "Salesforce/blip-image-captioning-base",
+      "supports": ["ViT base captioning checkpoint", "COCO captioning context", "Direct processor and model inference interface"],
+      "limits": "Pin a revision for a run. The mutable card does not certify exclusion of Flickr8k from pretraining."
+    },
+    {
+      "id": "blip-large-card",
+      "title": "Salesforce/blip-image-captioning-large model card",
+      "authors": ["Salesforce checkpoint publisher", "Hugging Face model documentation"],
+      "year": null,
+      "type": "official_checkpoint_documentation",
+      "url": "https://huggingface.co/Salesforce/blip-image-captioning-large",
+      "checkpoint": "Salesforce/blip-image-captioning-large",
+      "supports": ["ViT large captioning checkpoint", "COCO captioning context", "Direct inference interface"],
+      "limits": "Different released checkpoints do not isolate parameter count as a causal factor."
+    },
+    {
+      "id": "blip2-2023",
+      "title": "BLIP-2: Bootstrapping Language-Image Pre-training with Frozen Image Encoders and Large Language Models",
+      "authors": ["Junnan Li", "Dongxu Li", "Silvio Savarese", "Steven Hoi"],
+      "year": 2023,
+      "type": "research_paper",
+      "url": "https://proceedings.mlr.press/v202/li23q.html",
+      "supports": ["Frozen image encoder and language model", "Querying Transformer bridge", "Two-stage bridge pretraining"],
+      "limits": "Pretraining efficiency does not imply that local inference uses less memory than BLIP."
+    },
+    {
+      "id": "blip2-opt-card",
+      "title": "Salesforce/blip2-opt-2.7b model card",
+      "authors": ["Salesforce checkpoint publisher", "Hugging Face card authors"],
+      "year": null,
+      "type": "official_checkpoint_documentation",
+      "url": "https://huggingface.co/Salesforce/blip2-opt-2.7b",
+      "checkpoint": "Salesforce/blip2-opt-2.7b",
+      "supports": ["Pretrained-only checkpoint label", "OPT-2.7B component", "Precision-dependent parameter memory estimates", "Model limitations"],
+      "limits": "Hugging Face wrote the card. Parameter storage estimates exclude peak inference overhead."
+    },
+    {
+      "id": "bleu-2002",
+      "title": "Bleu: a Method for Automatic Evaluation of Machine Translation",
+      "authors": ["Kishore Papineni", "Salim Roukos", "Todd Ward", "Wei-Jing Zhu"],
+      "year": 2002,
+      "type": "research_paper",
+      "url": "https://aclanthology.org/P02-1040/",
+      "doi": "10.3115/1073083.1073135",
+      "supports": ["Clipped n-gram precision", "Brevity penalty", "Corpus aggregation"],
+      "limits": "A sentence BLEU average is not the corpus BLEU statistic. Exact overlap does not certify visual accuracy."
+    },
+    {
+      "id": "meteor-2005",
+      "title": "METEOR: An Automatic Metric for MT Evaluation with Improved Correlation with Human Judgments",
+      "authors": ["Satanjeev Banerjee", "Alon Lavie"],
+      "year": 2005,
+      "type": "research_paper",
+      "url": "https://aclanthology.org/W05-0909/",
+      "supports": ["Unigram alignment", "Precision, recall, and fragmentation", "Stem and meaning-based matches"],
+      "limits": "Implementations and lexical resources change the exact score. METEOR does not inspect the image."
+    },
+    {
+      "id": "cider-2015",
+      "title": "CIDEr: Consensus-Based Image Description Evaluation",
+      "authors": ["Ramakrishna Vedantam", "C. Lawrence Zitnick", "Devi Parikh"],
+      "year": 2015,
+      "type": "research_paper",
+      "url": "https://www.cv-foundation.org/openaccess/content_cvpr_2015/html/Vedantam_CIDEr_Consensus-Based_Image_2015_CVPR_paper.html",
+      "supports": ["Caption consensus evaluation", "TF-IDF weighted n-grams", "CIDEr family of metrics"],
+      "limits": "Specify the implemented variant and scaling. Use a fixed corpus for document frequencies."
+    },
+    {
+      "id": "bertscore-2020",
+      "title": "BERTScore: Evaluating Text Generation with BERT",
+      "authors": ["Tianyi Zhang", "Varsha Kishore", "Felix Wu", "Kilian Q. Weinberger", "Yoav Artzi"],
+      "year": 2020,
+      "type": "research_paper_and_author_code",
+      "url": "https://github.com/Tiiiger/bert_score",
+      "paper_url": "https://arxiv.org/abs/1904.09675",
+      "supports": ["Contextual token similarity", "Multiple references", "Configuration hash", "Encoder, layer, IDF, and rescaling choices"],
+      "limits": "Text similarity does not verify visual facts. Scores depend on the fixed encoder and options."
+    },
+    {
+      "id": "clipscore-2021",
+      "title": "CLIPScore: A Reference-free Evaluation Metric for Image Captioning",
+      "authors": ["Jack Hessel", "Ari Holtzman", "Maxwell Forbes", "Ronan Le Bras", "Yejin Choi"],
+      "year": 2021,
+      "type": "research_paper_and_author_code",
+      "url": "https://aclanthology.org/2021.emnlp-main.595/",
+      "code_url": "https://github.com/jmhessel/clipscore",
+      "supports": ["Reference-free image-caption compatibility", "Human correlation precedent", "ViT-B/32 and text prefix", "2.5 times nonnegative image-text cosine", "Image and precision sensitivity"],
+      "limits": "Raw cosine is a different statistic. High compatibility does not prove every caption claim."
+    },
+    {
+      "id": "chair-2018",
+      "title": "Object Hallucination in Image Captioning",
+      "authors": ["Anna Rohrbach", "Lisa Anne Hendricks", "Kaylee Burns", "Trevor Darrell", "Kate Saenko"],
+      "year": 2018,
+      "type": "research_paper",
+      "url": "https://aclanthology.org/D18-1437/",
+      "doi": "10.18653/v1/D18-1437",
+      "supports": ["Caption object hallucination", "Sentence scores and hallucination can disagree", "CHAIR uses verified object labels"],
+      "limits": "The COCO protocol does not transfer unchanged to Flickr8k without suitable annotations."
+    },
+    {
+      "id": "human-eval-2020",
+      "title": "Twenty Years of Confusion in Human Evaluation: NLG Needs Evaluation Sheets and Standardised Definitions",
+      "authors": ["David M. Howcroft", "Anya Belz", "Miruna-Adriana Clinciu", "Dimitra Gkatzia", "Sadid A. Hasan", "Saad Mahamood", "Simon Mille", "Emiel van Miltenburg", "Sashank Santhanam", "Verena Rieser"],
+      "year": 2020,
+      "type": "research_paper",
+      "url": "https://aclanthology.org/2020.inlg-1.23/",
+      "supports": ["Explicit quality criteria", "Human evaluation procedure reporting", "Reproducibility limits of inconsistent criteria"],
+      "limits": "The project's proposed 1-5 accuracy and detail rubric requires a pilot and does not inherit validation from this paper."
+    },
+    {
+      "id": "coco-evaluator",
+      "title": "Microsoft COCO Caption Evaluation",
+      "authors": ["Xinlei Chen", "Hao Fang", "Tsung-Yi Lin", "Ramakrishna Vedantam", "Contributors"],
+      "year": null,
+      "type": "official_evaluation_code",
+      "url": "https://github.com/tylin/coco-caption",
+      "supports": ["Caption metric implementation reference", "Java METEOR and Stanford tokenizer", "Corpus CIDEr document frequency and length penalty"],
+      "limits": "The original repository targets old Python and Java versions. A modern port needs pinned versions and parity checks."
+    }
+  ]
+}

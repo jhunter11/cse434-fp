@@ -1,0 +1,18 @@
+{
+  "experiment": "flickr8k-frozen-captioner-baseline",
+  "dataset": "Flickr8k",
+  "split": "original test split supplied as a local file",
+  "expected_test_images": 1000,
+  "references_per_image": 5,
+  "default_model": "generic",
+  "generic_role": "Frozen nonvisual negative control. No benchmark quality claim.",
+  "primary_models": ["blip-base", "blip-large", "blip2-opt-2.7b"],
+  "optional_comparator": "GPT vision. Adapter pending. Paid requests require separate approval.",
+  "generation": {"max_new_tokens": 32, "num_beams": 3, "do_sample": false},
+  "precision": {"blip-base": "float32", "blip-large": "float32", "blip2-opt-2.7b_cuda": "float16"},
+  "human_rating_sample_size": 100,
+  "human_rating_seed": 42,
+  "model_revisions": "Resolve and record each Hugging Face commit before inference. Pass --revision for repeat runs.",
+  "status": "Experiment plan. Full dataset benchmark pending.",
+  "config_usage": "CLI options control runs. This file records the experiment contract."
+}
