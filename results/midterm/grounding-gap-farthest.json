@@ -1,0 +1,913 @@
+{
+ "schema": "captionbench-grounding-gap/v1",
+ "split": "val",
+ "image_count": 200,
+ "image_ids_sha256": "7833610a756ffb8d149ed0eb6fcfee7d7998b1adb3e1b85462e36cfc927b2de6",
+ "shifts": null,
+ "donor_maps": [
+  "donors-farthest.json"
+ ],
+ "definition": "matched = caption scored on its own image; mismatched = mean over the donor assignments (fixed cyclic shifts of the sorted image order, or the donor maps); gap = matched - mismatched; blind_share = mismatched / matched",
+ "interval": "95% percentile bootstrap over images; fixed captions; excludes training-seed variation",
+ "scales": {
+  "bleu4": "0-1",
+  "meteor": "0-1",
+  "cider_d": "0-10",
+  "clipscore": "0-2.5"
+ },
+ "prediction_files": [
+  "confirm-blip-base-ft-s17.jsonl",
+  "confirm-decoder-plain-s17.jsonl",
+  "confirm-decoder-plain-s29.jsonl",
+  "confirm-decoder-plain-s43.jsonl",
+  "confirm-decoder-relation-s17.jsonl",
+  "confirm-decoder-relation-s29.jsonl",
+  "confirm-decoder-relation-s43.jsonl",
+  "confirm-decoder-relation-wd01-s17.jsonl",
+  "confirm-decoder-relation-wd01-s29.jsonl",
+  "confirm-decoder-relation-wd01-s43.jsonl",
+  "val-blip-base.jsonl",
+  "val-blip-large.jsonl",
+  "val-generic.jsonl"
+ ],
+ "scorer_provenance": {
+  "tokenizer": "nltk.tokenize.wordpunct_tokenize",
+  "normalization": "str.lower; punctuation retained; no downloads for BLEU",
+  "bleu4_corpus": "nltk.translate.bleu_score.corpus_bleu; no smoothing; auto_reweigh=False; scale 0-1",
+  "bleu4_sentence": "nltk.translate.bleu_score.sentence_bleu; method1 epsilon=0.1; auto_reweigh=False; scale 0-1",
+  "meteor": "nltk.translate.meteor_score.meteor_score; best of five references; default alpha=0.9 beta=3 gamma=0.5",
+  "cider_d": "captionbench.evaluation.cider_d; n=1-4; sigma=6; document frequency over the evaluated reference images; scale 0-10; WordPunct tokens; no PTB tokenizer or stemming",
+  "clipscore": null,
+  "nltk_version": "3.10.4"
+ },
+ "models": {
+  "blip-base": {
+   "image_count": 200,
+   "caption_tokens_mean": 6.745,
+   "mean_latency_seconds": 0.11631005850096698,
+   "condition": {
+    "model_id": "Salesforce/blip-image-captioning-base",
+    "revision": "82a37760796d32b1411fe092ab5d4e227313294b",
+    "precision": "float32",
+    "generation": {
+     "do_sample": false,
+     "max_new_tokens": 32,
+     "num_beams": 3
+    },
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 5070",
+    "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
+    "torch_version": "2.12.0.dev20260407+cu128",
+    "transformers_version": "5.5.0"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.22898348145128794,
+     "mismatched": 7.282378293593935e-79,
+     "gap": 0.22898348145128794,
+     "blind_share": 3.1803072638421426e-78
+    },
+    "bleu4_sentence": {
+     "matched": 0.1994205306265505,
+     "mismatched": 0.04093981339290789,
+     "gap": 0.15848071723364257,
+     "matched_ci95": [
+      0.17257314122663714,
+      0.22687307627329048
+     ],
+     "gap_ci95": [
+      0.13144216596080216,
+      0.18626147503652205
+     ],
+     "blind_share": 0.20529387452877051
+    },
+    "meteor": {
+     "matched": 0.35797186929104624,
+     "mismatched": 0.12120379290236936,
+     "gap": 0.2367680763886769,
+     "matched_ci95": [
+      0.333474130979345,
+      0.38364354179208526
+     ],
+     "gap_ci95": [
+      0.21142426576477372,
+      0.26239541007046346
+     ],
+     "blind_share": 0.3385846858369353
+    },
+    "cider_d": {
+     "matched": 0.5514194906480384,
+     "mismatched": 0.008054370578227523,
+     "gap": 0.543365120069811,
+     "matched_ci95": [
+      0.48415232656120266,
+      0.6255181156616884
+     ],
+     "gap_ci95": [
+      0.47537988916033747,
+      0.617929801130404
+     ],
+     "blind_share": 0.014606612052762005
+    }
+   }
+  },
+  "blip-base-ft-s17": {
+   "image_count": 200,
+   "caption_tokens_mean": 12.07,
+   "mean_latency_seconds": 0.1878803655001684,
+   "condition": {
+    "model_id": "Salesforce/blip-image-captioning-base fine-tuned on Flickr8k train",
+    "revision": "31ff084f16065eb938126af3afb475c42b827962",
+    "precision": "float32",
+    "generation": {
+     "do_sample": false,
+     "max_new_tokens": 32,
+     "num_beams": 3
+    },
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 5070",
+    "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
+    "torch_version": "2.12.0.dev20260407+cu128",
+    "transformers_version": "5.5.0"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.35457683414823743,
+     "mismatched": 0.012594454543879677,
+     "gap": 0.34198237960435773,
+     "blind_share": 0.03551967678354963
+    },
+    "bleu4_sentence": {
+     "matched": 0.31397250987114594,
+     "mismatched": 0.03420846077867521,
+     "gap": 0.27976404909247077,
+     "matched_ci95": [
+      0.28168403211214277,
+      0.3471401428118805
+     ],
+     "gap_ci95": [
+      0.24733803751062078,
+      0.3125485628000568
+     ],
+     "blind_share": 0.10895368130386426
+    },
+    "meteor": {
+     "matched": 0.5955652229536987,
+     "mismatched": 0.1942231186269987,
+     "gap": 0.40134210432670003,
+     "matched_ci95": [
+      0.5696755031536611,
+      0.6206019520094219
+     ],
+     "gap_ci95": [
+      0.3743841315266449,
+      0.42877014523283696
+     ],
+     "blind_share": 0.32611561444731685
+    },
+    "cider_d": {
+     "matched": 1.098318477913111,
+     "mismatched": 0.01661352905430329,
+     "gap": 1.0817049488588075,
+     "matched_ci95": [
+      0.9974167763299384,
+      1.2031481499992132
+     ],
+     "gap_ci95": [
+      0.9815535014764439,
+      1.1874457442766932
+     ],
+     "blind_share": 0.015126331194819069
+    }
+   }
+  },
+  "blip-large": {
+   "image_count": 200,
+   "caption_tokens_mean": 13.09,
+   "mean_latency_seconds": 0.46286699000032966,
+   "condition": {
+    "model_id": "Salesforce/blip-image-captioning-large",
+    "revision": "353689b859fcf0523410b1806dace5fb46ecdf41",
+    "precision": "float32",
+    "generation": {
+     "do_sample": false,
+     "max_new_tokens": 32,
+     "num_beams": 3
+    },
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 5070",
+    "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
+    "torch_version": "2.12.0.dev20260407+cu128",
+    "transformers_version": "5.5.0"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.20481892797853363,
+     "mismatched": 0.012051616080037948,
+     "gap": 0.1927673118984957,
+     "blind_share": 0.05884034351210469
+    },
+    "bleu4_sentence": {
+     "matched": 0.1708217562506784,
+     "mismatched": 0.03127580930518207,
+     "gap": 0.13954594694549632,
+     "matched_ci95": [
+      0.15091117863882192,
+      0.19286349687129117
+     ],
+     "gap_ci95": [
+      0.119329529822965,
+      0.1621365358787743
+     ],
+     "blind_share": 0.18309031584527957
+    },
+    "meteor": {
+     "matched": 0.46722207630543655,
+     "mismatched": 0.16160476308490782,
+     "gap": 0.30561731322052876,
+     "matched_ci95": [
+      0.4453040251371403,
+      0.48954545304702635
+     ],
+     "gap_ci95": [
+      0.28078703519630804,
+      0.33116108640131464
+     ],
+     "blind_share": 0.3458842620682635
+    },
+    "cider_d": {
+     "matched": 0.7030546724458582,
+     "mismatched": 0.023300145322135188,
+     "gap": 0.6797545271237229,
+     "matched_ci95": [
+      0.6332035944232819,
+      0.7727387430200817
+     ],
+     "gap_ci95": [
+      0.6087805092095785,
+      0.7508755093485783
+     ],
+     "blind_share": 0.03314129929764391
+    }
+   }
+  },
+  "decoder-plain-s17": {
+   "image_count": 200,
+   "caption_tokens_mean": 10.885,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-plain",
+    "revision": "8308d85baecdd57157da6397ab42fc93b2f1e476",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.18211210256695753,
+     "mismatched": 0.033208803114894755,
+     "gap": 0.14890329945206277,
+     "blind_share": 0.18235363079554148
+    },
+    "bleu4_sentence": {
+     "matched": 0.1624068384634747,
+     "mismatched": 0.043762850087178354,
+     "gap": 0.11864398837629633,
+     "matched_ci95": [
+      0.14075571540682114,
+      0.1860724448335016
+     ],
+     "gap_ci95": [
+      0.09544222774093085,
+      0.14465266334203802
+     ],
+     "blind_share": 0.269464331066457
+    },
+    "meteor": {
+     "matched": 0.3492886759943001,
+     "mismatched": 0.17132881562804017,
+     "gap": 0.17795986036625994,
+     "matched_ci95": [
+      0.32736613742745874,
+      0.3740199295364776
+     ],
+     "gap_ci95": [
+      0.15018896024271522,
+      0.20784838774511255
+     ],
+     "blind_share": 0.4905077874063001
+    },
+    "cider_d": {
+     "matched": 0.41322501221498925,
+     "mismatched": 0.031331577942848424,
+     "gap": 0.3818934342721408,
+     "matched_ci95": [
+      0.35412174640443433,
+      0.4824714138050462
+     ],
+     "gap_ci95": [
+      0.3179962278310222,
+      0.4534666296551994
+     ],
+     "blind_share": 0.07582207518103355
+    }
+   }
+  },
+  "decoder-plain-s29": {
+   "image_count": 200,
+   "caption_tokens_mean": 11.14,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-plain",
+    "revision": "30a247110c1215a12bac59fded6fc443e0a06e13",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.17150639230855755,
+     "mismatched": 0.03253464396472222,
+     "gap": 0.13897174834383533,
+     "blind_share": 0.1896993081528359
+    },
+    "bleu4_sentence": {
+     "matched": 0.15443171996375601,
+     "mismatched": 0.043100018357964884,
+     "gap": 0.11133170160579113,
+     "matched_ci95": [
+      0.1320596345930652,
+      0.17934982888347764
+     ],
+     "gap_ci95": [
+      0.08786686455138833,
+      0.13648435783454874
+     ],
+     "blind_share": 0.27908786075865855
+    },
+    "meteor": {
+     "matched": 0.3436271220087882,
+     "mismatched": 0.1767082883134509,
+     "gap": 0.16691883369533728,
+     "matched_ci95": [
+      0.3199354592979691,
+      0.36630225967804086
+     ],
+     "gap_ci95": [
+      0.13929791262718702,
+      0.19434538380616634
+     ],
+     "blind_share": 0.5142442985304624
+    },
+    "cider_d": {
+     "matched": 0.4094935393162056,
+     "mismatched": 0.03189833474690411,
+     "gap": 0.37759520456930146,
+     "matched_ci95": [
+      0.344672683912491,
+      0.4844608017174036
+     ],
+     "gap_ci95": [
+      0.30944133117014344,
+      0.4530637985938399
+     ],
+     "blind_share": 0.07789704032979292
+    }
+   }
+  },
+  "decoder-plain-s43": {
+   "image_count": 200,
+   "caption_tokens_mean": 10.68,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-plain",
+    "revision": "1bdbf7da266d4d60d0e992d5106cd2bf03c46705",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.1891070330180713,
+     "mismatched": 0.032666549518008736,
+     "gap": 0.15644048350006257,
+     "blind_share": 0.1727410609571939
+    },
+    "bleu4_sentence": {
+     "matched": 0.16290748882713055,
+     "mismatched": 0.04340187010013306,
+     "gap": 0.11950561872699747,
+     "matched_ci95": [
+      0.13841406656412358,
+      0.19144614395138457
+     ],
+     "gap_ci95": [
+      0.09373577542564446,
+      0.14872789693537514
+     ],
+     "blind_share": 0.2664203494425538
+    },
+    "meteor": {
+     "matched": 0.34638438055184784,
+     "mismatched": 0.16758726742531277,
+     "gap": 0.1787971131265351,
+     "matched_ci95": [
+      0.322908661103088,
+      0.3725939358963452
+     ],
+     "gap_ci95": [
+      0.15039701549803103,
+      0.20912527546825113
+     ],
+     "blind_share": 0.4838187771582495
+    },
+    "cider_d": {
+     "matched": 0.42372610124321847,
+     "mismatched": 0.026979346365686455,
+     "gap": 0.39674675487753197,
+     "matched_ci95": [
+      0.3602207619976645,
+      0.499580628796954
+     ],
+     "gap_ci95": [
+      0.331322243402906,
+      0.4735629795071486
+     ],
+     "blind_share": 0.06367166498955024
+    }
+   }
+  },
+  "decoder-relation-s17": {
+   "image_count": 200,
+   "caption_tokens_mean": 11.015,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation",
+    "revision": "37948ba52944f71cf40f4c4e90031caad9b1d6e2",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.18090315314593933,
+     "mismatched": 0.02684500049778198,
+     "gap": 0.15405815264815734,
+     "blind_share": 0.14839432055739465
+    },
+    "bleu4_sentence": {
+     "matched": 0.1667698693581453,
+     "mismatched": 0.04114172950011562,
+     "gap": 0.12562813985802967,
+     "matched_ci95": [
+      0.1419927646491688,
+      0.194950790302058
+     ],
+     "gap_ci95": [
+      0.1004229967739342,
+      0.15418744271106816
+     ],
+     "blind_share": 0.24669761785183164
+    },
+    "meteor": {
+     "matched": 0.3498547509926515,
+     "mismatched": 0.16596020753475876,
+     "gap": 0.18389454345789275,
+     "matched_ci95": [
+      0.32767886742961044,
+      0.37310997142692315
+     ],
+     "gap_ci95": [
+      0.1558023234912802,
+      0.21220772220806222
+     ],
+     "blind_share": 0.47436888326905885
+    },
+    "cider_d": {
+     "matched": 0.42347120549120987,
+     "mismatched": 0.026803341971189484,
+     "gap": 0.3966678635200204,
+     "matched_ci95": [
+      0.35431548962567305,
+      0.5041569961712183
+     ],
+     "gap_ci95": [
+      0.32523001336344926,
+      0.4769943841598706
+     ],
+     "blind_share": 0.06329436718158597
+    }
+   }
+  },
+  "decoder-relation-s29": {
+   "image_count": 200,
+   "caption_tokens_mean": 11.21,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation",
+    "revision": "6cc5b615927d25a2989b7002ad5802f4e7c8536a",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.1691936123753573,
+     "mismatched": 0.023749938439551647,
+     "gap": 0.14544367393580565,
+     "blind_share": 0.14037136571599543
+    },
+    "bleu4_sentence": {
+     "matched": 0.1512664207201097,
+     "mismatched": 0.040300126931621466,
+     "gap": 0.11096629378848823,
+     "matched_ci95": [
+      0.12898899469297923,
+      0.1780155859335161
+     ],
+     "gap_ci95": [
+      0.08826892600767833,
+      0.13803101336230442
+     ],
+     "blind_share": 0.26641819605283934
+    },
+    "meteor": {
+     "matched": 0.34050858731176964,
+     "mismatched": 0.16748805063285707,
+     "gap": 0.17302053667891257,
+     "matched_ci95": [
+      0.31861289248708546,
+      0.3629987314459999
+     ],
+     "gap_ci95": [
+      0.14608766407838536,
+      0.20039001584060098
+     ],
+     "blind_share": 0.49187614313968836
+    },
+    "cider_d": {
+     "matched": 0.3804764981084756,
+     "mismatched": 0.02003129643482682,
+     "gap": 0.3604452016736488,
+     "matched_ci95": [
+      0.31939154568732236,
+      0.4464898159272815
+     ],
+     "gap_ci95": [
+      0.2971791158542297,
+      0.42690959538059664
+     ],
+     "blind_share": 0.052647920527053964
+    }
+   }
+  },
+  "decoder-relation-s43": {
+   "image_count": 200,
+   "caption_tokens_mean": 10.895,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation",
+    "revision": "bdd078d0b05af67843020c761eabdf151a57023d",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.17477228718223534,
+     "mismatched": 0.029836633404220915,
+     "gap": 0.14493565377801443,
+     "blind_share": 0.1707171879779213
+    },
+    "bleu4_sentence": {
+     "matched": 0.15302861233230455,
+     "mismatched": 0.04131202925248556,
+     "gap": 0.111716583079819,
+     "matched_ci95": [
+      0.13188121182298385,
+      0.1765493016089396
+     ],
+     "gap_ci95": [
+      0.08982750458806939,
+      0.13567134607819997
+     ],
+     "blind_share": 0.26996277769790983
+    },
+    "meteor": {
+     "matched": 0.34333596170345904,
+     "mismatched": 0.1675527448566139,
+     "gap": 0.17578321684684517,
+     "matched_ci95": [
+      0.32227265012440137,
+      0.36583747276067835
+     ],
+     "gap_ci95": [
+      0.14976562119708506,
+      0.20429339333893431
+     ],
+     "blind_share": 0.4880139675008178
+    },
+    "cider_d": {
+     "matched": 0.4040969489603301,
+     "mismatched": 0.02823769271842813,
+     "gap": 0.375859256241902,
+     "matched_ci95": [
+      0.3491393240301963,
+      0.4637167778773839
+     ],
+     "gap_ci95": [
+      0.31877819547177016,
+      0.4385488683087331
+     ],
+     "blind_share": 0.06987851007308696
+    }
+   }
+  },
+  "decoder-relation-wd01-s17": {
+   "image_count": 200,
+   "caption_tokens_mean": 10.88,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation-wd01",
+    "revision": "7f7fa74a9af61fe608e60de66366c511919472e7",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.1860716003719359,
+     "mismatched": 0.027529286696290744,
+     "gap": 0.15854231367564517,
+     "blind_share": 0.14794996464405552
+    },
+    "bleu4_sentence": {
+     "matched": 0.16672709841821706,
+     "mismatched": 0.040946410170874,
+     "gap": 0.12578068824734306,
+     "matched_ci95": [
+      0.1417340147326277,
+      0.19507136155440816
+     ],
+     "gap_ci95": [
+      0.10074283976253094,
+      0.15450901638002562
+     ],
+     "blind_share": 0.2455894126350374
+    },
+    "meteor": {
+     "matched": 0.3502320976314919,
+     "mismatched": 0.16127633237482944,
+     "gap": 0.18895576525666247,
+     "matched_ci95": [
+      0.3272064427244459,
+      0.3738338020175175
+     ],
+     "gap_ci95": [
+      0.1623346186982209,
+      0.21622162025699293
+     ],
+     "blind_share": 0.4604841574073019
+    },
+    "cider_d": {
+     "matched": 0.42451185208292475,
+     "mismatched": 0.027339213981446862,
+     "gap": 0.39717263810147785,
+     "matched_ci95": [
+      0.35484217287747283,
+      0.5024511794779923
+     ],
+     "gap_ci95": [
+      0.32628662002497144,
+      0.47547304091151377
+     ],
+     "blind_share": 0.0644015328366059
+    }
+   }
+  },
+  "decoder-relation-wd01-s29": {
+   "image_count": 200,
+   "caption_tokens_mean": 11.235,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation-wd01",
+    "revision": "29a5d80672b711faebdd8c24aeb64c5b7e925b80",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.17675509977865556,
+     "mismatched": 0.026344118251894165,
+     "gap": 0.15041098152676138,
+     "blind_share": 0.1490430447827758
+    },
+    "bleu4_sentence": {
+     "matched": 0.15715369793541634,
+     "mismatched": 0.041308969504411666,
+     "gap": 0.11584472843100467,
+     "matched_ci95": [
+      0.1349417567360126,
+      0.18394908240922095
+     ],
+     "gap_ci95": [
+      0.09345169011257011,
+      0.143810360585639
+     ],
+     "blind_share": 0.2628571267943561
+    },
+    "meteor": {
+     "matched": 0.34641399383258914,
+     "mismatched": 0.17092533162642223,
+     "gap": 0.17548866220616696,
+     "matched_ci95": [
+      0.32395957705812356,
+      0.36970224129923523
+     ],
+     "gap_ci95": [
+      0.1478225095504714,
+      0.20445570144818587
+     ],
+     "blind_share": 0.4934134725198919
+    },
+    "cider_d": {
+     "matched": 0.3990650640888619,
+     "mismatched": 0.022704238855085292,
+     "gap": 0.3763608252337766,
+     "matched_ci95": [
+      0.33766122874675863,
+      0.46773730546228004
+     ],
+     "gap_ci95": [
+      0.3143020964236822,
+      0.44536914994414983
+     ],
+     "blind_share": 0.05689357675777307
+    }
+   }
+  },
+  "decoder-relation-wd01-s43": {
+   "image_count": 200,
+   "caption_tokens_mean": 11.005,
+   "mean_latency_seconds": null,
+   "condition": {
+    "model_id": "captionbench/decoder-relation-wd01",
+    "revision": "2fd30675171ca04b88ca968193a4e8c51c6f9300",
+    "precision": "float32",
+    "generation": {
+     "decode": "greedy",
+     "max_new_tokens": 24
+    },
+    "device": "cuda",
+    "torch_version": "2.12.0.dev20260407+cu128"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.16990012478377373,
+     "mismatched": 0.028478019115070204,
+     "gap": 0.14142210566870353,
+     "blind_share": 0.16761623425122987
+    },
+    "bleu4_sentence": {
+     "matched": 0.15119797443439942,
+     "mismatched": 0.04094163755619971,
+     "gap": 0.11025633687819969,
+     "matched_ci95": [
+      0.1303823201600684,
+      0.17488514168818659
+     ],
+     "gap_ci95": [
+      0.08882332973364244,
+      0.13463291346717898
+     ],
+     "blind_share": 0.2707816537182721
+    },
+    "meteor": {
+     "matched": 0.34126822092866876,
+     "mismatched": 0.16704897871317625,
+     "gap": 0.1742192422154925,
+     "matched_ci95": [
+      0.32056284189183,
+      0.3627694787447716
+     ],
+     "gap_ci95": [
+      0.14724531794930285,
+      0.2021713253737273
+     ],
+     "blind_share": 0.4894946803385262
+    },
+    "cider_d": {
+     "matched": 0.4059288508137401,
+     "mismatched": 0.026931922974401903,
+     "gap": 0.37899692783933825,
+     "matched_ci95": [
+      0.34989061458636805,
+      0.46786921383390456
+     ],
+     "gap_ci95": [
+      0.3202748874460029,
+      0.4422888779394744
+     ],
+     "blind_share": 0.06634641248192427
+    }
+   }
+  },
+  "generic": {
+   "image_count": 200,
+   "caption_tokens_mean": 8.0,
+   "mean_latency_seconds": 3.9700025808997454e-07,
+   "condition": {
+    "model_id": "captionbench/generic-negative-control",
+    "revision": "v1",
+    "precision": "not applicable",
+    "generation": {},
+    "device": "cpu",
+    "device_name": "CPU",
+    "latency_scope": "constant caption lookup; no image processing"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.034379349306941934,
+     "mismatched": 0.034379349306941934,
+     "gap": 0.0,
+     "blind_share": 1.0
+    },
+    "bleu4_sentence": {
+     "matched": 0.05927572659589267,
+     "mismatched": 0.05927572659589267,
+     "gap": -3.469446951953614e-20,
+     "matched_ci95": [
+      0.05347214561881621,
+      0.0658083843125337
+     ],
+     "gap_ci95": [
+      -0.009422411631666995,
+      0.009358683600195027
+     ],
+     "blind_share": 1.0
+    },
+    "meteor": {
+     "matched": 0.17731742220893132,
+     "mismatched": 0.17731742220893132,
+     "gap": -2.0816681711721684e-19,
+     "matched_ci95": [
+      0.16699942138143847,
+      0.18815980102273033
+     ],
+     "gap_ci95": [
+      -0.015878625452241227,
+      0.014893890798775814
+     ],
+     "blind_share": 1.0
+    },
+    "cider_d": {
+     "matched": 0.019400995796278783,
+     "mismatched": 0.019400995796278783,
+     "gap": -4.9873299934333206e-20,
+     "matched_ci95": [
+      0.01409318059291603,
+      0.025591065072731674
+     ],
+     "gap_ci95": [
+      -0.008743953037844135,
+      0.008796296464091297
+     ],
+     "blind_share": 1.0
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema": "captionbench-donor-rules/v1",
+ "image_count": 200,
+ "clip_model": "openai/clip-vit-base-patch32",
+ "clip_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+ "all_pairs_mean_similarity": 0.5059506009889757,
+ "rules": {
+  "nearest": {
+   "file": "donors-nearest.json",
+   "mean_similarity": 0.7226458169519901,
+   "min_similarity": 0.4285196363925934,
+   "max_similarity": 0.8871899247169495
+  },
+  "farthest": {
+   "file": "donors-farthest.json",
+   "mean_similarity": 0.3959881539642811,
+   "min_similarity": 0.07039153575897217,
+   "max_similarity": 0.5382719039916992
+  },
+  "cyclic_shift": {
+   "mean_similarity": 0.5048134588897228
+  }
+ }
+}

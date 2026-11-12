@@ -15,8 +15,25 @@ def _json_output(path, value):
 
 
 def _evaluation_inputs(args):
-    records = [row for row in load_manifest(args.manifest) if row["split"] == "test"]
+    """Select one split and, when requested, a declared image subset.
+
+    The default stays the test split. A subset file holds a JSON list of image
+    IDs. Every listed ID must exist in the selected split.
+    """
+    split = getattr(args, "split", "test")
+    records = [row for row in load_manifest(args.manifest) if row["split"] == split]
     predictions = [row for path in args.predictions for row in read_jsonl(path)]
+    subset_path = getattr(args, "image_ids", None)
+    if subset_path:
+        subset = json.loads(Path(subset_path).read_text(encoding="utf-8"))
+        if not isinstance(subset, list) or not subset or len(set(subset)) != len(subset):
+            raise ValueError("--image-ids needs a JSON list of unique image IDs")
+        missing = sorted(set(subset) - {row["image_id"] for row in records})
+        if missing:
+            raise ValueError(f"--image-ids has IDs outside split {split}: {', '.join(missing[:5])}")
+        keep = set(subset)
+        records = [row for row in records if row["image_id"] in keep]
+        predictions = [row for row in predictions if row.get("image_id") in keep]
     return records, predictions
 
 
@@ -79,6 +96,11 @@ def _build_parser():
     evaluate.add_argument("--manifest", required=True)
     evaluate.add_argument("--predictions", nargs="+", required=True)
     evaluate.add_argument("--include-meteor", action="store_true")
+    evaluate.add_argument("--include-clipscore", action="store_true",
+                          help="Score image-caption agreement with CLIP ViT-B/32; needs the models extra")
+    evaluate.add_argument("--split", choices=["val", "test"], default="test",
+                          help="Use val for development results. Keep test for the final comparison")
+    evaluate.add_argument("--image-ids", help="JSON list of image IDs that restricts the scored images")
     evaluate.add_argument("--output", required=True)
 
     ratings = sub.add_parser("ratings-template", help="Create a blinded human-rating CSV and private model key")
@@ -119,7 +141,8 @@ def main(argv=None):
                        "model": args.model, "split": args.split, "revision": predictions[0]["revision"]}
         elif args.command == "evaluate":
             from .evaluation import evaluate
-            result = evaluate(*_evaluation_inputs(args), include_meteor=args.include_meteor)
+            result = evaluate(*_evaluation_inputs(args), include_meteor=args.include_meteor,
+                              split=args.split, include_clipscore=args.include_clipscore)
             _json_output(args.output, result)
             summary = {"output": str(Path(args.output).resolve()), "per_model": result["per_model"],
                        "unmeasured_metrics": result["unmeasured_metrics"]}

@@ -1,0 +1,180 @@
+"""Run the whole grounding-gap study with one command.
+
+The runner needs a GPU, an internet connection, and nothing else. It uses no
+cloud drive and no account. It downloads Flickr8k, generates and trains every
+condition, scores each caption on its own image and on other images, and
+writes the tables, the figures, and the caption gallery.
+
+Every stage skips work whose output file exists. Run the same command again
+after a disconnect to continue.
+
+Profiles:
+
+* ``quick``: a wiring check with one small decoder and a short fine-tune.
+  Its scores are not study results.
+* ``midterm``: the conditions in the midterm report.
+* ``full``: ``midterm`` plus a wider decoder on ConvNeXt features and a
+  fine-tuned BLIP large. Use a GPU with 16 GiB or more.
+
+The test split stays sealed. No stage reads it.
+
+Example:
+    python scripts/run_study.py --profile quick --work outputs/study
+"""
+
+import argparse
+import json
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+SEARCH_IDS = ROOT / "configs" / "partition" / "search-ids.json"
+CONFIRM_IDS = ROOT / "configs" / "partition" / "confirm-ids.json"
+CLI = "from captionbench.cli import main; raise SystemExit(main())"
+
+PROFILES = {
+    "quick": {
+        "zero_shot": ["generic", "blip-base"],
+        "decoders": [("decoder-plain", "plain", ["--epochs", "3", "--limit-train-images", "1500"])],
+        "decoder_seeds": [17],
+        "finetunes": [("blip-base-ft", "blip-base", ["--epochs", "1", "--limit-train-images", "200"])],
+        "donor_rules": False, "bootstrap": 200,
+    },
+    "midterm": {
+        "zero_shot": ["generic", "blip-base", "blip-large"],
+        "decoders": [("decoder-plain", "plain", []), ("decoder-relation", "relation", [])],
+        "decoder_seeds": [17, 29, 43],
+        "finetunes": [("blip-base-ft", "blip-base", [])],
+        "donor_rules": True, "bootstrap": 2000,
+    },
+}
+PROFILES["full"] = {
+    **PROFILES["midterm"],
+    "decoders": [*PROFILES["midterm"]["decoders"],
+                 ("decoder-convnext", "plain", ["--encoder", "convnext_base", "--width", "256", "--dropout", "0.3"])],
+    "finetunes": [("blip-base-ft", "blip-base", []), ("blip-large-ft", "blip-large", ["--single-seed"])],
+}
+
+
+def run(label, command):
+    print(f"\n=== {label}", flush=True)
+    started = time.perf_counter()
+    subprocess.run([sys.executable, *map(str, command)], check=True, cwd=ROOT)
+    print(f"=== {label}: done in {time.perf_counter() - started:.0f}s", flush=True)
+
+
+def wordnet_ready():
+    try:
+        from nltk.corpus import wordnet
+        wordnet.ensure_loaded()
+        return True
+    except LookupError:
+        return False
+
+
+def training_summary(work, names):
+    """Collect the decoder loss histories in the layout that the figure script reads."""
+    runs = []
+    for name in names:
+        history = json.loads((work / "runs" / name / "history.json").read_text(encoding="utf-8"))
+        family, seed = name.rsplit("-s", 1)
+        runs.append({"model": name, "family": family, "seed": int(seed), "best_epoch": history["best_epoch"],
+                     "best_search_token_loss": history["best_validation_loss"],
+                     "epochs": history["epochs"]})
+    return {"schema": "captionbench-decoder-training/v1", "source": "scripts/run_study.py", "runs": runs}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--profile", choices=list(PROFILES), default="quick")
+    parser.add_argument("--work", default="outputs/study", help="Folder for every output of this run")
+    parser.add_argument("--manifest", default="data/flickr8k.jsonl")
+    parser.add_argument("--data-root", default="data/flickr8k")
+    parser.add_argument("--finetune-seeds", type=int, nargs="+", default=[17, 29, 43])
+    parser.add_argument("--finetune-batch-size", type=int, default=8)
+    parser.add_argument("--skip-finetune", action="store_true")
+    args = parser.parse_args(argv)
+
+    profile = PROFILES[args.profile]
+    work, manifest = (ROOT / args.work).resolve(), (ROOT / args.manifest).resolve()
+    results, report = work / "results", work / "report"
+    for folder in (work / "runs", results, report / "figures"):
+        folder.mkdir(parents=True, exist_ok=True)
+    started = time.perf_counter()
+
+    if not manifest.is_file():
+        run("Download Flickr8k and write the manifest",
+            [SCRIPTS / "fetch_flickr8k.py", "--root", ROOT / args.data_root, "--manifest", manifest])
+    if not wordnet_ready():
+        run("Download WordNet for METEOR", ["-m", "nltk.downloader", "-q", "wordnet"])
+
+    for model in profile["zero_shot"]:
+        output = work / f"val-{model}.jsonl"
+        if not (output.with_suffix(".done")).is_file():
+            run(f"Caption the validation split: {model}",
+                ["-c", CLI, "generate", "--manifest", manifest, "--model", model, "--split", "val",
+                 "--output", output])
+            output.with_suffix(".done").write_text("ok\n", encoding="utf-8")
+
+    decoder_names = []
+    for family, variant, extra in profile["decoders"]:
+        encoder = extra[extra.index("--encoder") + 1] if "--encoder" in extra else "resnet18"
+        for seed in profile["decoder_seeds"]:
+            name = f"{family}-s{seed}"
+            decoder_names.append(name)
+            output = work / f"confirm-{name}.jsonl"
+            if output.is_file():
+                continue
+            run(f"Train decoder {name}",
+                [SCRIPTS / "train_decoder.py", "--manifest", manifest, "--search-ids", SEARCH_IDS,
+                 "--predict-ids", CONFIRM_IDS, "--run-dir", work / "runs" / name, "--output", output,
+                 "--model-name", name, "--variant", variant, "--seed", seed,
+                 "--feature-cache", work / f"features-{encoder}.pt", *extra])
+
+    for family, base, extra in [] if args.skip_finetune else profile["finetunes"]:
+        seeds = args.finetune_seeds[:1] if "--single-seed" in extra or args.profile == "quick" else args.finetune_seeds
+        for seed in seeds:
+            name = f"{family}-s{seed}"
+            output = work / f"confirm-{name}.jsonl"
+            if output.is_file():
+                continue
+            run(f"Fine-tune {name}",
+                [SCRIPTS / "finetune_blip.py", "--manifest", manifest, "--search-ids", SEARCH_IDS,
+                 "--predict-ids", CONFIRM_IDS, "--run-dir", work / "runs" / name, "--output", output,
+                 "--model-name", name, "--base-model", base, "--seed", seed,
+                 "--batch-size", args.finetune_batch_size, *[item for item in extra if item != "--single-seed"]])
+
+    gap = [SCRIPTS / "grounding_gap.py", "--manifest", manifest, "--split", "val", "--image-ids", CONFIRM_IDS,
+           "--predictions", work / "confirm-*.jsonl", work / "val-*.jsonl",
+           "--bootstrap-samples", profile["bootstrap"]]
+    run("Score every caption on its own image and on other images",
+        [*gap, "--output", results / "grounding-gap.json", "--per-image-output", work / "per-image.json"])
+    if profile["donor_rules"]:
+        run("Pair images by CLIP similarity",
+            [SCRIPTS / "donor_rules.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS, "--output-dir", work])
+        (results / "donor-rules.json").write_text((work / "donor-rules.json").read_text(encoding="utf-8"),
+                                                  encoding="utf-8")
+        for rule in ("nearest", "farthest"):
+            run(f"Score on the {rule} other image",
+                [*gap, "--donor-maps", work / f"donors-{rule}.json",
+                 "--output", results / f"grounding-gap-{rule}.json"])
+
+    (results / "decoder-training.json").write_text(
+        json.dumps(training_summary(work, decoder_names), indent=1) + "\n", encoding="utf-8")
+    run("Draw the figures and the results table",
+        [SCRIPTS / "make_midterm_figures.py", "--results", results, "--report", report, "--image-format", "png"])
+    for suffix in ("pdf", "png"):
+        run(f"Draw the caption gallery ({suffix})",
+            [SCRIPTS / "make_gallery.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS,
+             "--predictions-dir", work, "--output", work / f"gallery.{suffix}"])
+    print(f"\nStudy profile '{args.profile}' finished in {(time.perf_counter() - started) / 60:.1f} minutes.")
+    print(f"Tables and figures: {report}\nAggregate results: {results}\nGallery: {work / 'gallery.pdf'}")
+    if args.profile == "quick":
+        print("The quick profile checks the wiring. Its scores are not study results.")
+
+
+if __name__ == "__main__":
+    main()

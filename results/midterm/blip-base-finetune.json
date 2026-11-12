@@ -1,0 +1,47 @@
+{
+ "schema": "captionbench-finetune/v1",
+ "base_model": "Salesforce/blip-image-captioning-base",
+ "base_revision": "82a37760796d32b1411fe092ab5d4e227313294b",
+ "checkpoint_sha256": "31ff084f16065eb938126af3afb475c42b827962b3ad6fd8bdac4b30e139a739",
+ "best": {
+  "epoch": 2,
+  "search_loss": 1.8088272562026977
+ },
+ "history": [
+  {
+   "epoch": 0,
+   "train_loss": null,
+   "search_loss": 3.261157759666443,
+   "elapsed_seconds": 0.0
+  },
+  {
+   "epoch": 1,
+   "train_loss": 1.9651163116455077,
+   "search_loss": 1.8370402894020081,
+   "elapsed_seconds": 732.0498671000241
+  },
+  {
+   "epoch": 2,
+   "train_loss": 1.5020075957139334,
+   "search_loss": 1.8088272562026977,
+   "elapsed_seconds": 691.9613675000146
+  }
+ ],
+ "train_images": 6000,
+ "train_pairs": 30000,
+ "search_images": 800,
+ "predicted_images": 200,
+ "settings": {
+  "epochs": 2,
+  "batch_size": 8,
+  "learning_rate": 1e-05,
+  "weight_decay": 0.05,
+  "max_length": 40,
+  "seed": 17
+ },
+ "schedule": "AdamW, one-cycle cosine, 10% warm-up, gradient clip 1.0, fp16 autocast for training",
+ "text_normalization": "lowercase and strip the reference captions",
+ "device": "NVIDIA GeForce RTX 5070",
+ "torch_version": "2.12.0.dev20260407+cu128",
+ "transformers_version": "5.5.0"
+}

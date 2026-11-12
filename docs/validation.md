@@ -50,13 +50,46 @@ The runner flushes each row. A flush to mounted Drive storage does not confirm t
 Human-analysis tests cover blinded assignments, altered captions, invalid ratings, missing coverage, tied ranks, constant inputs, and image-cluster resampling.
 No real human rating was collected.
 
+## Midterm run, November 11, 2026
+
+These checks ran on the 200 confirmation images of the Flickr8k validation split.
+The 1,000 test images stayed unused.
+
+| Check | Observed result |
+|---|---|
+| `python -m pytest -q` in the Python 3.12 environment | 107 passed, 3 skipped (the skipped tests need PyTorch) |
+| Custom decoder tests with PyTorch on Python 3.14 | 31 passed |
+| `python -m ruff check src tests scripts` | All checks passed |
+| Flickr8k import | 8,000 images in the manifest: 6,000 train, 1,000 validation, 1,000 test |
+| `cider_d` against `pycocoevalcap` | Largest per-image difference 6.7e-16 on 12 prediction files |
+| BLIP base and BLIP large on the validation split | 1,000 captions each on the RTX 5070 |
+| Nine frozen decoder checkpoints | Imported from the October 22 search with matching SHA-256 values |
+| BLIP base fine-tuning, one seed | Search loss 3.26 before training, 1.84 after epoch 1, 1.81 after epoch 2 |
+| `scripts/grounding_gap.py` | Own-image and other-image scores for 13 prediction files |
+
+The aggregate scores are in [results/midterm](../results/midterm/).
+`grounding-gap.json` holds each model. `summary.json` holds the family means that the report cites.
+
+One test found a defect. A shift larger than the image count left the image order unchanged.
+The script now reduces each shift by the image count. The 200-image run used shifts below 200, so its numbers did not change.
+
+The first fine-tuning run used batch size 16 and filled the 12 GB of GPU memory. It was stopped.
+The reported run used batch size 8.
+
+Limits of this run:
+
+- Fine-tuning has one seed. The decoder families have three seeds each.
+- The intervals resample images. They exclude training-seed variation.
+- The other-image analysis began after the team saw validation scores.
+- BERTScore and BLIP-2 remain unmeasured. No human rating was collected.
+
 ## Current limits
 
-The original Flickr8k dataset has not entered this repository's executed benchmark.
-The complete 1,000-image experiment and 100-image human study remain pending.
-BLIP large and BLIP-2 adapters have import and interface checks, without measured inference runs.
-CIDEr, BERTScore, original CLIPScore, fine-tuning, and a GPT vision condition remain pending.
-NLTK METEOR requires WordNet. The local setup check found that resource absent, so no METEOR score was reported.
+The October 12 limits changed with the midterm run above.
+The complete 1,000-image test experiment and the 100-image human study remain pending.
+The BLIP-2 adapter has import and interface checks, without a measured inference run.
+BERTScore and a GPT vision condition remain pending.
+NLTK METEOR requires WordNet. The midterm run installed it for Python 3.14 and reported METEOR.
 
 The notebook code has local execution and source checks. A hosted Colab GPU session remains unverified.
 Its Drive mount and Colab upload widget require a real hosted session and user interaction.

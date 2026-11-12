@@ -5,20 +5,32 @@ This repository starts a CSE434 study on Flickr8k. The main workflow runs in one
 
 ## Start here
 
-Open [the Colab notebook](https://colab.research.google.com/github/jhunter11/cse434-fp/blob/main/notebooks/baseline.ipynb).
-Choose a GPU runtime and run its cells in order.
-The setup cell installs the project automatically. No manual source file copying or web server is required.
+Open [the study notebook in Colab](https://colab.research.google.com/github/jhunter11/cse434-fp/blob/midterm-checkin/notebooks/study.ipynb).
+Choose **Runtime > Change runtime type > T4 GPU**, then **Runtime > Run all**.
 
-The notebook has settings, a real BLIP smoke image, dataset preparation, resumable inference, scoring, an inline gallery, and a rating form.
-It also includes an optional image-upload demo inside the notebook.
-Start with the default 20-image validation pilot. After settings are fixed, run the original 1,000-image test split.
+The notebook needs no Google Drive, no account, and no uploaded file.
+It copies this repository, downloads Flickr8k from a public mirror, and checks the archive hashes.
+It then trains and scores every condition and shows the tables, the figures, and a page of real captions.
+The last cell downloads the results as a zip file.
 
-Use Drive storage for completed captions and experiment records.
-The runner saves each completed image and verifies it before resuming.
-Different hardware or model settings require a new run folder.
-Colab GPU types and runtime limits vary. See the [official FAQ](https://research.google.com/colaboratory/faq.html).
+| Profile | What runs | Estimated time on a T4 |
+|---|---|---|
+| `quick` | A wiring check. Its scores are not study results. | 15 minutes |
+| `midterm` | The conditions in the midterm report | 2.5 hours |
+| `full` | `midterm`, a wider decoder on ConvNeXt features, and a fine-tuned BLIP large | 4 hours |
 
-The notebook has local execution checks. A hosted Colab GPU execution remains unverified.
+The notebook calls one command, which also runs on a local GPU:
+
+```bash
+python scripts/run_study.py --profile quick
+```
+
+The command skips each stage whose output exists. Run it again after an interruption.
+
+Status of the checks: a local run confirmed the download, the hash check, the manifest, and each stage script.
+A hosted Colab run of the notebook remains unverified. The times are estimates from a local RTX 5070.
+
+The earlier [baseline notebook](notebooks/baseline.ipynb) remains for the single-image demo and the rating forms. It can use Drive.
 
 ## Optional local workflow
 
@@ -52,21 +64,29 @@ The server binds to the local computer at `127.0.0.1`.
 Which released model offers useful captions at a practical compute cost?
 Which automatic metrics agree with human ratings of accuracy and detail?
 Image captioning and metric evaluation already have extensive research.
-Our contribution is a reproducible comparison with explicit controls and failure analysis.
+A plain model comparison repeats that research, so the midterm changed the main question.
+
+How much of each automatic caption score can a model earn without its own image?
+How does that share change from a decoder trained from scratch, to pretrained BLIP, to fine-tuned BLIP?
+`scripts/grounding_gap.py` scores each caption on its own image and on other images to answer this.
+The [midterm results](results/midterm/) hold the aggregate scores. The report source is in [report/](report/).
 Read the [research review](docs/research.md) for prior methods, primary sources, and limitations.
 
 ## Scope and status
 
 | Component | Current implementation |
 |---|---|
-| Colab | One notebook with GPU checks, Drive storage, incremental results, and an inline demo |
+| Colab | `notebooks/study.ipynb` runs the whole study with no Drive. `scripts/run_study.py` is its one command |
 | Data | Flickr8k import from local files, fixed split manifests, image hashes, and validation |
 | Baselines | Generic nonvisual control and pretrained BLIP base |
 | Larger models | BLIP large and BLIP-2 adapters for explicit runs |
-| Scoring | Corpus BLEU-4 and per-caption BLEU-4, with optional NLTK METEOR |
+| Scoring | Corpus and per-caption BLEU-4, CIDEr-D, optional NLTK METEOR, and optional CLIPScore |
+| Custom decoders | `scripts/train_decoder.py` trains plain and relation decoders from scratch on frozen ResNet18 or ConvNeXt features |
+| Fine-tuning | `scripts/finetune_blip.py` trains BLIP base or BLIP large on the Flickr8k training split |
+| Grounding gap | `scripts/grounding_gap.py` scores each caption on its own image and on other images. `scripts/donor_rules.py` selects the nearest and the farthest other image |
 | Human study | Blinded rating forms and separate accuracy/detail correlations |
 | Demo | Local image upload, model selection, caption output, and saved comparison gallery |
-| Planned extensions | CIDEr, BERTScore, original CLIPScore, fine-tuning, and a budgeted GPT vision condition |
+| Planned extensions | BERTScore, BLIP-2 scores, the sealed test run, and the human rating study |
 
 The repository does not claim a completed 1,000-image benchmark or completed human study.
 Missing metric values mean unmeasured. They do not mean zero.

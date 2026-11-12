@@ -28,8 +28,11 @@ class MetricSetupError(RuntimeError):
 def validate_inputs(
     manifest: Iterable[Mapping[str, Any]],
     predictions: Iterable[Mapping[str, Any]],
+    split: str = "test",
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, dict[str, Any]]]]:
-    """Require five references, test data, and the same images for each model."""
+    """Require five references, one declared split, and the same images for each model."""
+    if split not in {"val", "test"}:
+        raise EvaluationError("Evaluation split must be val or test.")
     images: dict[str, dict[str, Any]] = {}
     for row in manifest:
         if not isinstance(row, Mapping):
@@ -37,8 +40,8 @@ def validate_inputs(
         image_id = _nonempty_string(row.get("image_id"), "manifest image_id")
         if image_id in images:
             raise EvaluationError(f"Duplicate manifest image_id: {image_id}")
-        if row.get("split") != "test":
-            raise EvaluationError(f"Evaluation requires split=test: {image_id}")
+        if row.get("split") != split:
+            raise EvaluationError(f"Evaluation requires split={split}: {image_id}")
         references = row.get("references")
         if not isinstance(references, (list, tuple)) or len(references) != 5:
             raise EvaluationError(f"Exactly five references are required: {image_id}")
@@ -167,18 +170,85 @@ def _load_meteor() -> Any:
     return meteor_score
 
 
+CIDER_N = 4
+CIDER_SIGMA = 6.0
+
+
+def _ngram_counts(tokens: list[str]) -> dict[tuple[str, ...], int]:
+    counts: dict[tuple[str, ...], int] = defaultdict(int)
+    for n in range(1, CIDER_N + 1):
+        for start in range(len(tokens) - n + 1):
+            counts[tuple(tokens[start:start + n])] += 1
+    return counts
+
+
+def cider_d(references: list[list[list[str]]], hypotheses: list[list[str]]) -> list[float]:
+    """Score each caption with CIDEr-D (Vedantam et al., 2015), scale 0-10.
+
+    The function follows the COCO caption reference code: n-grams from 1 to 4,
+    TF-IDF weights with document frequency over the evaluated reference images,
+    clipped candidate counts, a Gaussian length penalty with sigma 6, and a
+    factor of 10. It takes pre-tokenized text and applies no stemming.
+    Scores depend on the evaluated image set because that set fixes the
+    document frequencies. Compare scores only within one image set.
+    """
+    if len(references) != len(hypotheses) or not references:
+        raise EvaluationError("CIDEr-D needs one reference list per caption.")
+    reference_counts = [[_ngram_counts(reference) for reference in group] for group in references]
+    document_frequency: dict[tuple[str, ...], int] = defaultdict(int)
+    for group in reference_counts:
+        for ngram in {ngram for counts in group for ngram in counts}:
+            document_frequency[ngram] += 1
+    log_documents = math.log(float(len(references)))
+
+    def vector(counts):
+        weights = [defaultdict(float) for _ in range(CIDER_N)]
+        norms = [0.0] * CIDER_N
+        length = 0
+        for ngram, frequency in counts.items():
+            order = len(ngram) - 1
+            idf = log_documents - math.log(max(1.0, float(document_frequency.get(ngram, 0))))
+            weights[order][ngram] = float(frequency) * idf
+            norms[order] += weights[order][ngram] ** 2
+            if order == 1:
+                length += frequency
+        return weights, [math.sqrt(value) for value in norms], length
+
+    scores = []
+    for group, hypothesis in zip(reference_counts, hypotheses, strict=True):
+        candidate, candidate_norm, candidate_length = vector(_ngram_counts(hypothesis))
+        total = [0.0] * CIDER_N
+        for counts in group:
+            reference, reference_norm, reference_length = vector(counts)
+            delta = float(candidate_length - reference_length)
+            penalty = math.exp(-(delta ** 2) / (2 * CIDER_SIGMA ** 2))
+            for order in range(CIDER_N):
+                overlap = sum(min(weight, reference[order][ngram]) * reference[order][ngram]
+                              for ngram, weight in candidate[order].items() if ngram in reference[order])
+                if candidate_norm[order] and reference_norm[order]:
+                    overlap /= candidate_norm[order] * reference_norm[order]
+                total[order] += overlap * penalty
+        scores.append(10.0 * statistics.fmean(total) / len(group))
+    return scores
+
+
 def evaluate(
     manifest: Iterable[Mapping[str, Any]],
     predictions: Iterable[Mapping[str, Any]],
     include_meteor: bool = False,
+    split: str = "test",
+    include_clipscore: bool = False,
+    clipscore_device: str = "auto",
 ) -> dict[str, Any]:
-    """Compute BLEU-4 and optional NLTK METEOR; never substitute proxy metrics.
+    """Compute BLEU-4, CIDEr-D, optional NLTK METEOR, and optional CLIPScore.
+
+    The function never substitutes a proxy for a named metric.
 
     Corpus BLEU uses unsmoothed modified n-gram counts across the full corpus.
     Sentence BLEU uses Chen-Cherry method 1, epsilon 0.1. Both retain four
     equal weights even for short captions and use all five references.
     """
-    images, by_model = validate_inputs(manifest, predictions)
+    images, by_model = validate_inputs(manifest, predictions, split=split)
     corpus_bleu, sentence_bleu, smoothing_class, tokenize = _load_bleu()
     meteor_score = _load_meteor() if include_meteor else None
     image_ids = sorted(images)
@@ -190,6 +260,13 @@ def evaluate(
     }
     weights = (0.25, 0.25, 0.25, 0.25)
     smoothing = smoothing_class(epsilon=0.1).method1
+    clip_scores, clip_provenance = None, None
+    if include_clipscore:
+        from .clipscore import clipscore
+        clip_scores, clip_provenance = clipscore(
+            {i: images[i]["image_path"] for i in image_ids},
+            {model: {i: by_model[model][i]["caption"] for i in image_ids} for model in by_model},
+            device=clipscore_device)
     per_model: dict[str, Any] = {}
     per_image: list[dict[str, Any]] = []
 
@@ -198,7 +275,10 @@ def evaluate(
         sentences: list[float] = []
         meteors: list[float] = []
         latencies: list[float] = []
-        for image_id, references, hypothesis in zip(image_ids, refs, hypotheses, strict=True):
+        ciders = cider_d(refs, hypotheses)
+        clips = [clip_scores[model][i] for i in image_ids] if clip_scores else []
+        for index, (image_id, references, hypothesis) in enumerate(
+                zip(image_ids, refs, hypotheses, strict=True)):
             prediction = by_model[model][image_id]
             bleu = float(sentence_bleu(references, hypothesis, weights=weights,
                                        smoothing_function=smoothing, auto_reweigh=False))
@@ -212,7 +292,9 @@ def evaluate(
             per_image.append({"image_id": image_id, "model": model, "caption": prediction["caption"],
                               "image_sha256": content_hashes[image_id]["image_sha256"],
                               "references_sha256": reference_hashes[image_id],
-                              "bleu4_sentence": bleu, "meteor": meteor, "latency_seconds": latency})
+                              "bleu4_sentence": bleu, "meteor": meteor, "cider_d": ciders[index],
+                              "clipscore": clips[index] if clips else None,
+                              "caption_tokens": len(hypothesis), "latency_seconds": latency})
         per_model[model] = {
             "image_count": len(image_ids),
             "condition": model_condition(by_model[model], model),
@@ -221,19 +303,20 @@ def evaluate(
                                                   smoothing_function=None, auto_reweigh=False)),
                 "bleu4_sentence_mean": statistics.fmean(sentences),
                 "meteor_mean": statistics.fmean(meteors) if meteors else None,
-                "cider": None,
+                "cider_d": statistics.fmean(ciders),
                 "bertscore_f1": None,
-                "clipscore": None,
+                "clipscore": statistics.fmean(clips) if clips else None,
+                "caption_tokens_mean": statistics.fmean(len(h) for h in hypotheses),
             },
             "mean_latency_seconds": statistics.fmean(latencies) if latencies else None,
             "latency_observation_count": len(latencies),
         }
 
     unmeasured = {
-        "cider": "Not implemented. Add and validate an official COCO-caption CIDEr scorer before reporting this metric.",
         "bertscore_f1": "Not implemented. Select and pin the BERTScore checkpoint, package, and multi-reference convention first.",
-        "clipscore": "Not implemented. Select and pin a CLIPScore implementation, image preprocessing, and checkpoint first.",
     }
+    if not include_clipscore:
+        unmeasured["clipscore"] = "Not requested. Use --include-clipscore with the models extra installed."
     if not include_meteor:
         unmeasured["meteor_mean"] = "Not requested. Use --include-meteor after installing the NLTK WordNet resource."
     return {
@@ -243,7 +326,7 @@ def evaluate(
         "unmeasured_metrics": unmeasured,
         "provenance": {
             "nltk_version": importlib.metadata.version("nltk"),
-            "split": "test",
+            "split": split,
             "image_count": len(image_ids),
             "image_ids": image_ids,
             "image_ids_sha256": hashlib.sha256("\n".join(image_ids).encode()).hexdigest(),
@@ -259,6 +342,8 @@ def evaluate(
             "bleu4_corpus": "nltk.translate.bleu_score.corpus_bleu; no smoothing; auto_reweigh=False; scale 0-1",
             "bleu4_sentence": "nltk.translate.bleu_score.sentence_bleu; method1 epsilon=0.1; auto_reweigh=False; scale 0-1",
             "meteor": "nltk.translate.meteor_score.meteor_score; best of five references; default alpha=0.9 beta=3 gamma=0.5" if include_meteor else None,
+            "cider_d": "captionbench.evaluation.cider_d; n=1-4; sigma=6; document frequency over the evaluated reference images; scale 0-10; WordPunct tokens; no PTB tokenizer or stemming",
+            "clipscore": clip_provenance,
             "comparability": "These tokenizer and scorer settings differ from COCO PTB-tokenized leaderboard protocols.",
             "sentence_score_use": "Use per-caption sentence scores for human correlations; corpus BLEU is not a per-caption score.",
         },

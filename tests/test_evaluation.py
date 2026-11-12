@@ -4,7 +4,7 @@ import pytest
 from nltk.tokenize import wordpunct_tokenize
 from nltk.translate.bleu_score import SmoothingFunction, corpus_bleu, sentence_bleu
 
-from captionbench.evaluation import EvaluationError, MetricSetupError, evaluate
+from captionbench.evaluation import EvaluationError, MetricSetupError, cider_d, evaluate
 
 
 def fixtures():
@@ -77,9 +77,10 @@ def test_rejects_invalid_comparisons(mutation, match):
 def test_optional_metrics_are_explicitly_unmeasured():
     result = evaluate(*fixtures())
     scores = result["per_model"]["baseline"]["metrics"]
-    for metric in ("meteor_mean", "cider", "bertscore_f1", "clipscore"):
+    for metric in ("meteor_mean", "bertscore_f1", "clipscore"):
         assert scores[metric] is None
         assert metric in result["unmeasured_metrics"]
+    assert "cider_d" not in result["unmeasured_metrics"]
     assert result["per_model"]["baseline"]["condition"]["status"] == "unknown"
 
 
@@ -194,3 +195,43 @@ def test_meteor_uses_multi_reference_implementation(monkeypatch):
     assert len(calls) == 2 and all(len(r) == 5 for r, _ in calls)
     assert result["per_model"]["baseline"]["metrics"]["meteor_mean"] == 0.75
     assert "meteor_mean" not in result["unmeasured_metrics"]
+
+
+def test_cider_d_gives_ten_for_exact_consensus_and_zero_for_no_overlap():
+    dog, hat = "a black dog runs".split(), "the child wears red".split()
+    references = [[dog] * 5, [hat] * 5]
+    exact = cider_d(references, [dog, hat])
+    assert exact == pytest.approx([10.0, 10.0])
+    swapped = cider_d(references, [hat, dog])
+    assert swapped == [0.0, 0.0]
+
+
+def test_cider_d_ranks_consensus_above_partial_match_and_penalizes_length():
+    manifest, predictions = fixtures()
+    result = evaluate(manifest, predictions)
+    by_image = {row["image_id"]: row["cider_d"] for row in result["per_image"]}
+    assert 0.0 < by_image["two"] < by_image["one"] <= 10.0
+    assert result["per_model"]["baseline"]["metrics"]["cider_d"] == pytest.approx(sum(by_image.values()) / 2)
+    references = [["a black dog runs in a field".split()] * 5, ["the child wears red".split()] * 5]
+    short = cider_d(references, ["a black dog runs in a field".split(), "the child".split()])
+    padded = cider_d(references, [("a black dog runs in a field " * 3).split(), "the child".split()])
+    assert padded[0] < short[0]
+
+
+def test_cider_d_document_frequency_removes_words_that_every_image_shares():
+    references = [["a dog".split()] * 5, ["a cat".split()] * 5]
+    scores = cider_d(references, ["a".split(), "a cat".split()])
+    assert scores[0] == 0.0
+    assert scores[1] > 0.0
+
+
+def test_validation_split_needs_an_explicit_request():
+    manifest, predictions = fixtures()
+    for row in manifest:
+        row["split"] = "val"
+    with pytest.raises(EvaluationError, match="split=test"):
+        evaluate(manifest, predictions)
+    result = evaluate(manifest, predictions, split="val")
+    assert result["provenance"]["split"] == "val"
+    with pytest.raises(EvaluationError, match="val or test"):
+        evaluate(manifest, predictions, split="train")

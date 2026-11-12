@@ -11,6 +11,27 @@ The human study target contains 100 shared test images with each model's caption
 Use accuracy and detail ratings from 1 to 5 as separate outcomes.
 Do not merge them into a single score without a declared rule.
 
+## Midterm revision, November 11, 2026
+
+The main question changed after the first validation scores.
+BLEU-4 ranked BLIP base above BLIP large. METEOR, CIDEr-D, and CLIPScore ranked them the opposite way.
+The study now measures the metrics before it ranks the models.
+
+Score each caption on its own image and on other images of the same set.
+The other-image score uses fixed cyclic shifts of the sorted image IDs.
+The grounding gap is the own-image score minus the other-image score.
+The blind share is the other-image score divided by the own-image score.
+
+Compare four conditions on the 200 confirmation images of the validation split:
+
+1. The generic fixed caption.
+2. Decoders trained from scratch on frozen ResNet18 features, three seeds per family.
+3. Released BLIP base and BLIP large checkpoints.
+4. BLIP base after fine-tuning on the Flickr8k training split.
+
+The 800 search images select epochs and settings. The 1,000 test images stay unused until the final run.
+This analysis began after the team saw validation scores. Report it as exploratory.
+
 ## Staged experiment
 
 1. Run the offline fixture and validate failures for invalid data.
@@ -59,9 +80,9 @@ Call the baseline pretrained inference or transfer evaluation. Do not claim unse
 | Corpus BLEU-4 | Model-level reference overlap | Short captions and valid paraphrases can score poorly |
 | Sentence BLEU-4 | Per-caption correlation | Smoothing and tokenization affect ranking |
 | NLTK METEOR | Optional reference alignment | WordNet resources and implementation affect comparability |
-| CIDEr | Planned consensus metric | Requires declared corpus-wide document frequency |
+| CIDEr-D | Consensus metric, implemented | Document frequency comes from the evaluated reference images |
 | BERTScore | Planned semantic reference comparison | Encoder, IDF, and rescaling change scores |
-| Original CLIPScore | Planned image-caption compatibility | Vision-language biases and coarse image matching remain |
+| Original CLIPScore | Image-caption compatibility, implemented | Vision-language biases and coarse image matching remain |
 
 Record unimplemented or unrun metrics as unmeasured.
 Do not substitute a convenient embedding cosine for a named published metric.
