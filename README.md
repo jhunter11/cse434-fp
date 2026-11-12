@@ -6,12 +6,17 @@ This repository starts a CSE434 study on Flickr8k. The main workflow runs in one
 ## Start here
 
 Open [the study notebook in Colab](https://colab.research.google.com/github/jhunter11/cse434-fp/blob/midterm-checkin/notebooks/study.ipynb).
-Choose **Runtime > Change runtime type > T4 GPU**, then **Runtime > Run all**.
+Choose **Runtime > Run all**. You do not need to edit a setting.
+The notebook asks Colab for a T4 GPU. If its GPU check reports no GPU, choose **Runtime > Change runtime type > T4 GPU** and run all cells again.
 
-The notebook needs no Google Drive, no account, and no uploaded file.
+The default profile is `quick`. It is a short demo that ends with a score table and a page of photos with each model's caption.
+To run the study, set `PROFILE` to `midterm` or `full` in the Settings cell.
+
+The notebook needs no account and no uploaded file. Google Drive is optional.
+With `SAVE_TO_DRIVE` on, the notebook copies the small result files to `My Drive/CaptionBench` after each stage, and a later run continues from them.
 It copies this repository, downloads Flickr8k from a public mirror, and checks the archive hashes.
 It then trains and scores every condition and shows the tables, the figures, and a page of real captions.
-The last cell downloads the results as a zip file.
+Near the end, a cell downloads the results as a zip file. The last cell releases the GPU.
 
 | Profile | What runs | Estimated time on a T4 |
 |---|---|---|
@@ -76,7 +81,7 @@ Read the [research review](docs/research.md) for prior methods, primary sources,
 
 | Component | Current implementation |
 |---|---|
-| Colab | `notebooks/study.ipynb` runs the whole study with no Drive. `scripts/run_study.py` is its one command |
+| Colab | `notebooks/study.ipynb` runs the whole study. Google Drive is optional. `scripts/run_study.py` is its one command |
 | Data | Flickr8k import from local files, fixed split manifests, image hashes, and validation |
 | Baselines | Generic nonvisual control and pretrained BLIP base |
 | Larger models | BLIP large and BLIP-2 adapters for explicit runs |

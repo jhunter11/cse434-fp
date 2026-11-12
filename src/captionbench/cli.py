@@ -25,16 +25,21 @@ def _evaluation_inputs(args):
     predictions = [row for path in args.predictions for row in read_jsonl(path)]
     subset_path = getattr(args, "image_ids", None)
     if subset_path:
-        subset = json.loads(Path(subset_path).read_text(encoding="utf-8"))
-        if not isinstance(subset, list) or not subset or len(set(subset)) != len(subset):
-            raise ValueError("--image-ids needs a JSON list of unique image IDs")
-        missing = sorted(set(subset) - {row["image_id"] for row in records})
-        if missing:
-            raise ValueError(f"--image-ids has IDs outside split {split}: {', '.join(missing[:5])}")
-        keep = set(subset)
+        keep = _image_subset(subset_path, records, split)
         records = [row for row in records if row["image_id"] in keep]
         predictions = [row for row in predictions if row.get("image_id") in keep]
     return records, predictions
+
+
+def _image_subset(subset_path, split_records, split):
+    """Read a JSON list of unique image IDs. Every ID must exist in ``split_records``."""
+    subset = json.loads(Path(subset_path).read_text(encoding="utf-8"))
+    if not isinstance(subset, list) or not subset or len(set(subset)) != len(subset):
+        raise ValueError("--image-ids needs a JSON list of unique image IDs")
+    missing = sorted(set(subset) - {row["image_id"] for row in split_records})
+    if missing:
+        raise ValueError(f"--image-ids has IDs outside split {split}: {', '.join(missing[:5])}")
+    return set(subset)
 
 
 def _create_demo_manifest(output_dir):
@@ -87,6 +92,7 @@ def _build_parser():
     generate.add_argument("--model", choices=list(MODEL_IDS), default="generic")
     generate.add_argument("--split", choices=["train", "val", "test"], default="test")
     generate.add_argument("--limit", type=int)
+    generate.add_argument("--image-ids", help="JSON list of image IDs that restricts the captioned images")
     generate.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
     generate.add_argument("--revision", help="Model commit hash or revision; resolved hash is recorded")
     generate.add_argument("--output", required=True)
@@ -135,6 +141,10 @@ def main(argv=None):
                                       args.val_split, args.test_split, args.output)
         elif args.command == "generate":
             records = load_manifest(args.manifest)
+            if args.image_ids:
+                keep = _image_subset(args.image_ids, [row for row in records if row["split"] == args.split],
+                                     args.split)
+                records = [row for row in records if row["image_id"] in keep]
             predictions = generate_to_file(records, args.output, args.model, args.split, args.limit,
                                            args.device, args.revision, resume=not args.no_resume)
             summary = {"output": str(Path(args.output).resolve()), "prediction_count": len(predictions),

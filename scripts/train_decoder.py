@@ -119,8 +119,13 @@ def main(argv=None):
         print(json.dumps({key: round(value, 4) if isinstance(value, float) else value
                           for key, value in epoch.items()}), flush=True)
     started = time.perf_counter()
-    captions = predict_records(model, features, predict_rows, vocab, device=device, batch_size=64)
+    # predict_records returns word-token lists. The scorer reads one caption string per row.
+    captions = {image_id: " ".join(tokens).strip() for image_id, tokens in
+                predict_records(model, features, predict_rows, vocab, device=device, batch_size=64).items()}
     latency = (time.perf_counter() - started) / len(predict_rows)
+    empty = sorted(image_id for image_id, caption in captions.items() if not caption)
+    if empty:
+        raise RuntimeError(f"The decoder wrote an empty caption for {len(empty)} images, for example {empty[0]}")
     digest = hashlib.sha256((Path(args.run_dir) / "best.pt").read_bytes()).hexdigest()
     parameters = result["metadata"]["trainable_parameters"]
     model_id = (f"CaptionBench {args.variant} decoder from scratch on frozen {args.encoder} "

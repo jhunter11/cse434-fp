@@ -42,13 +42,15 @@ PROFILES = {
         "decoder_seeds": [17],
         "finetunes": [("blip-base-ft", "blip-base", ["--epochs", "1", "--limit-train-images", "200"])],
         "donor_rules": False, "bootstrap": 200,
+        # Every quick stage that reads a zero-shot caption reads only the 200 confirmation images.
+        "zero_shot_ids": CONFIRM_IDS,
     },
     "midterm": {
         "zero_shot": ["generic", "blip-base", "blip-large"],
         "decoders": [("decoder-plain", "plain", []), ("decoder-relation", "relation", [])],
         "decoder_seeds": [17, 29, 43],
         "finetunes": [("blip-base-ft", "blip-base", [])],
-        "donor_rules": True, "bootstrap": 2000,
+        "donor_rules": True, "bootstrap": 2000, "zero_shot_ids": None,
     },
 }
 PROFILES["full"] = {
@@ -73,6 +75,17 @@ def wordnet_ready():
         return True
     except LookupError:
         return False
+
+
+def repair_token_captions(path):
+    """Join captions that an earlier trainer saved as word-token lists. Return the number of repaired rows."""
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    broken = [row for row in rows if isinstance(row.get("caption"), list)]
+    for row in broken:
+        row["caption"] = " ".join(row["caption"]).strip()
+    if broken:
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8", newline="\n")
+    return len(broken)
 
 
 def training_summary(work, names):
@@ -111,12 +124,13 @@ def main(argv=None):
     if not wordnet_ready():
         run("Download WordNet for METEOR", ["-m", "nltk.downloader", "-q", "wordnet"])
 
+    subset = profile["zero_shot_ids"]
     for model in profile["zero_shot"]:
         output = work / f"val-{model}.jsonl"
         if not (output.with_suffix(".done")).is_file():
-            run(f"Caption the validation split: {model}",
+            run(f"Caption the {'confirmation images' if subset else 'validation split'}: {model}",
                 ["-c", CLI, "generate", "--manifest", manifest, "--model", model, "--split", "val",
-                 "--output", output])
+                 "--output", output, *(["--image-ids", subset] if subset else [])])
             output.with_suffix(".done").write_text("ok\n", encoding="utf-8")
 
     decoder_names = []
@@ -127,7 +141,16 @@ def main(argv=None):
             decoder_names.append(name)
             output = work / f"confirm-{name}.jsonl"
             if output.is_file():
+                repaired = repair_token_captions(output)
+                if repaired:
+                    print(f"Joined {repaired} token-list captions in {output.name}", flush=True)
                 continue
+            run_dir = work / "runs" / name
+            if run_dir.exists():
+                # An interrupted stage left its folder, and the trainer never overwrites one. Keep it and train again.
+                stale = run_dir.with_name(f"{name}.interrupted-{time.strftime('%Y%m%d-%H%M%S')}")
+                run_dir.rename(stale)
+                print(f"Moved the folder of an interrupted run to {stale.name}", flush=True)
             run(f"Train decoder {name}",
                 [SCRIPTS / "train_decoder.py", "--manifest", manifest, "--search-ids", SEARCH_IDS,
                  "--predict-ids", CONFIRM_IDS, "--run-dir", work / "runs" / name, "--output", output,

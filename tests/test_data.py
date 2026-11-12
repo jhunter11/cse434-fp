@@ -134,6 +134,23 @@ def test_cli_generate_writes_predictions_without_models_dependency(tmp_path, cap
     assert json.loads(capsys.readouterr().out)["prediction_count"] == 1
 
 
+def test_cli_generate_image_ids_restricts_and_validates_the_subset(tmp_path):
+    from captionbench.cli import main
+    from captionbench.data import read_jsonl
+    rows = [record(tmp_path, name, "val") for name in ("a.png", "b.png", "c.png")]
+    manifest = write_manifest(tmp_path, rows)
+    subset = tmp_path / "subset.json"
+    subset.write_text(json.dumps(["c.png", "a.png"]), encoding="utf-8")
+    output = tmp_path / "generic.jsonl"
+    arguments = ["generate", "--manifest", str(manifest), "--split", "val", "--output", str(output)]
+    assert main([*arguments, "--image-ids", str(subset)]) == 0
+    assert sorted(row["image_id"] for row in read_jsonl(output)) == ["a.png", "c.png"]
+    subset.write_text(json.dumps(["a.png", "missing.png"]), encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        main([*arguments[:-1], str(tmp_path / "other.jsonl"), "--image-ids", str(subset)])
+    assert exc.value.code == 2
+
+
 def test_cli_rejects_bad_manifest_with_error_exit(tmp_path):
     from captionbench.cli import main
     manifest = write_manifest(tmp_path, [{"image_id": "broken"}])
