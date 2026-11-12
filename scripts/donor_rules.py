@@ -55,7 +55,8 @@ def main(argv=None):
     image_ids = sorted(json.loads(Path(args.image_ids).read_text(encoding="utf-8")))
     by_id = {row["image_id"]: row for row in load_manifest(args.manifest)}
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    revision = AutoConfig.from_pretrained(CLIP_MODEL_ID)._commit_hash
+    from captionbench.models import resolve_revision
+    revision = resolve_revision(CLIP_MODEL_ID, config=AutoConfig.from_pretrained(CLIP_MODEL_ID))
     processor = CLIPProcessor.from_pretrained(CLIP_MODEL_ID, revision=revision)
     model = CLIPModel.from_pretrained(CLIP_MODEL_ID, revision=revision).to(device).eval()
     vectors = []

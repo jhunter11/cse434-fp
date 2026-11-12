@@ -45,6 +45,24 @@ def _device(torch, requested):
     return requested
 
 
+def resolve_revision(model_id, revision=None, config=None):
+    """Return the 40-character commit of a Hugging Face model, or ``None``.
+
+    Some Transformers releases do not set ``config._commit_hash``. The Hub API
+    gives the same commit, so the function asks the Hub when the config has none.
+    """
+    resolved = getattr(config, "_commit_hash", None)
+    if resolved:
+        return resolved
+    if revision and re.fullmatch(r"[0-9a-f]{40}", revision):
+        return revision
+    try:
+        from huggingface_hub import model_info
+        return model_info(model_id, revision=revision).sha
+    except Exception:  # no network, or a Hub error; the caller decides if a commit is required
+        return None
+
+
 @lru_cache(maxsize=3)
 def _load_model(model_key, device, revision):
     import torch
@@ -55,9 +73,7 @@ def _load_model(model_key, device, revision):
 
     model_id = MODEL_IDS[model_key]
     config = AutoConfig.from_pretrained(model_id, revision=revision, trust_remote_code=False)
-    resolved = getattr(config, "_commit_hash", None)
-    if not resolved and revision and re.fullmatch(r"[0-9a-f]{40}", revision):
-        resolved = revision
+    resolved = resolve_revision(model_id, revision, config)
     if not resolved:
         raise RuntimeError("Could not resolve the model commit; pass a 40-character revision")
     is_blip2 = model_key == "blip2-opt-2.7b"

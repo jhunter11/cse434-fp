@@ -110,7 +110,8 @@ def main(argv=None):
         raise ValueError("Training, search, and prediction images must not overlap")
 
     model_id = MODEL_IDS[args.base_model]
-    base_revision = AutoConfig.from_pretrained(model_id)._commit_hash
+    from captionbench.models import resolve_revision
+    base_revision = resolve_revision(model_id, config=AutoConfig.from_pretrained(model_id))
     processor = BlipProcessor.from_pretrained(model_id, revision=base_revision)
     model = BlipForConditionalGeneration.from_pretrained(model_id, revision=base_revision).to(device)
     collate = Collate(processor, args.max_length)

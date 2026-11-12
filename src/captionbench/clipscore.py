@@ -25,7 +25,8 @@ def clipscore(image_paths, captions_by_model, device="auto", batch_size=64, revi
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
     config = AutoConfig.from_pretrained(CLIP_MODEL_ID, revision=revision, trust_remote_code=False)
-    resolved = getattr(config, "_commit_hash", None) or revision
+    from .models import resolve_revision
+    resolved = resolve_revision(CLIP_MODEL_ID, revision, config) or revision
     processor = CLIPProcessor.from_pretrained(CLIP_MODEL_ID, revision=resolved, trust_remote_code=False)
     model = CLIPModel.from_pretrained(CLIP_MODEL_ID, revision=resolved, trust_remote_code=False).to(device).eval()
 
