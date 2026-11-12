@@ -101,7 +101,7 @@ adequate for blind or low-vision readers.
 \node[box, text width=36mm] (blind) at (4.3,1.5) {Image-blind control\\one fixed caption};
 \node[box, text width=36mm] (dec) at (4.3,0.5) {ResNet18 grid $\rightarrow$ decoder\\from scratch, 3 seeds};
 \node[box, text width=36mm] (blip) at (4.3,-0.5) {BLIP base and large\\zero-shot};
-\node[box, text width=36mm] (ft) at (4.3,-1.5) {BLIP base\\fine-tuned on train};
+\node[box, text width=36mm] (ft) at (4.3,-1.5) {BLIP base\\fine-tuned on train, 3 seeds};
 \node[box, text width=17mm] (cap) at (8.1,0) {Captions for the 200 images};
 \node[box, text width=25mm, draw=own, line width=0.9pt] (own) at (11.0,0.75) {Score on\\\textbf{own image}};
 \node[box, text width=25mm, draw=other, line width=0.9pt] (oth) at (11.0,-0.75) {Score on \textbf{other}\\\textbf{image} (5 shifts)};
@@ -131,7 +131,7 @@ seeds 17, 29, and 43.
 checkpoints, with three beams and at most 32 new tokens.
 (d) \emph{Fine-tuned BLIP base}: all weights, AdamW (learning rate $10^{-5}$,
 weight decay 0.05, batch 8), a one-cycle cosine schedule, and two epochs
-over the 30,000 training pairs. Decoding is the same as in (c).
+over the 30,000 training pairs, with seeds 17, 29, and 43. Decoding is the same as in (c).
 \item \textbf{Score on the own image.} One scorer computes corpus BLEU-4
 [5], METEOR [6], CIDEr-D [7],
 and reference-free CLIPScore [8] (CLIP ViT-B/32). We wrote
@@ -149,7 +149,7 @@ metric cannot tell whether the model saw the image.
 \end{enumerate}
 
 \textbf{Uncertainty.} Intervals are 95\% percentile bootstraps over images
-(2,000 resamples).
+(2,000 resamples). A three-seed row is the seed mean (Table~\ref{tab:seeds}).
 \textbf{What we fixed in advance.} We froze the validation partition and the
 decoder configurations on October 22, before any confirmation score. We
 designed the other-image analysis on November 11, after we saw the BLIP rank
@@ -194,52 +194,53 @@ of its BLEU-4, 41\% of its METEOR, and 65\% of its CLIPScore. The fixed control
 caption gets a CLIPScore of 0.54 and the best model 0.81, a narrow usable range.
 
 \textbf{3. The blind share falls along the training ladder.} The decoders that
-we trained from scratch keep 27\% of their BLEU-4 on other images. Zero-shot
+we trained from scratch keep 26\% of their BLEU-4 on other images. Zero-shot
 BLIP keeps 10--14\%, and fine-tuned BLIP keeps 10\%. The same order holds for
-CIDEr-D (15\%, 7--8\%, 5\%) and CLIPScore (67\%, 60--65\%, 53\%). A small model
+CIDEr-D (14--15\%, 7--8\%, 5\%) and CLIPScore (67--68\%, 60--65\%, 53\%). A small model
 trained only on Flickr8k learns the dataset's wording before it learns to
 ground it. The order survives a harder test: each photo paired with its most
 similar photo (optimal matching on CLIP image similarity). The decoders then
-keep 62--65\% of their CIDEr-D, zero-shot BLIP 30--34\%, and fine-tuned BLIP 24\%.
+keep 63--65\% of their CIDEr-D, zero-shot BLIP 30--34\%, and fine-tuned BLIP 26\%
+(Table~\ref{tab:rules}).
 
 \textbf{4. Fine-tuning gains are mostly grounded. Our hypothesis was wrong.}
 We expected fine-tuning to raise scores mainly through Flickr8k wording.
-Fine-tuning raised BLEU-4 from 22.9 to 35.5 and CIDEr-D from 0.55 to 1.10
-(95\% interval 1.00--1.20). The other-image score supplied only 2 of the 55
-percentage points of relative BLEU-4 gain, and 2 of 99 for CIDEr-D. CLIPScore
+Fine-tuning raised BLEU-4 from 22.9 to 35.0 and CIDEr-D from 0.55 to 1.07
+(three seeds, range 1.05--1.08). The other-image score supplied less than 2 of the 53
+percentage points of relative BLEU-4 gain, and less than 2 of 94 for CIDEr-D
+(Figure~\ref{fig:split}). CLIPScore
 rose from 0.72 to 0.81 while its other-image score fell from 0.47 to 0.43.
 METEOR is the exception: 21 of its 66 points of relative gain appear on other
-images too. One fine-tuning seed supports these numbers.
+images too.
 
 \textbf{5. The relation layer did not help (negative result).} It reached
-17.5 BLEU-4 against 18.1 for the plain decoder (three seeds each). The paired
-bootstrap interval, $[-2.08, 0.60]$ points, includes zero. We stop that work.
+17.7 BLEU-4 against 18.0 for the plain decoder (three seeds each). The paired
+bootstrap interval, $[-1.93, 1.34]$ points, includes zero. We stop that work.
 
 \begin{table}[h]
 \centering\footnotesize
 \begin{tabular}{@{}ll@{}}
 \toprule
-Decoder, plain & a woman in a black shirt is sitting on a cellphone with a \textless unk\textgreater{} in a crowd \\
+Decoder, plain (seed 17) & a woman in a black shirt and a woman is sitting on a cellphone \\
 BLIP base & a woman holding a sign \\
 BLIP large & there are two women holding a sign that says free hugs \\
-BLIP base, fine-tuned & two girls hold up a yellow sign that says, i love you, happy, free hugs \\
+BLIP base, fine-tuned (seed 17) & two girls hold up a sign that says, ' happy free hugs '. \\
 \bottomrule
 \end{tabular}
 \caption{Outputs for one confirmation photo: two women hold signs that offer
-free hugs (our description). The fine-tuned model adds detail and invents sign text.}
+free hugs (our description). Seeds 29 and 43 of the fine-tuned model quote no sign text.}
 \label{tab:examples}
 \end{table}
 
-\textbf{Limits.} The set has 200 photos, and fine-tuning has one seed. The
+\textbf{Limits.} The set has 200 photos, and each trained condition has three seeds. The
 shares depend on how similar Flickr8k photos are, so they do not transfer to
 another dataset. No human rating supports any metric yet.
 
 \section{Next Steps}
 
 \textbf{Planned improvements.}
-(1) Repeat fine-tuning with three seeds, and record the blind share after every
-500 steps.
-(2) Move training to Colab. One notebook runs every stage, and adds a decoder on ConvNeXt features and a fine-tuned BLIP large.
+(1) Record the blind share after every 500 fine-tuning steps.
+(2) Run the notebook's full profile: a ConvNeXt decoder and a fine-tuned BLIP large.
 (3) Add BERTScore and BLIP-2.
 
 \textbf{Evaluation strategy.}
@@ -264,6 +265,68 @@ hallucinate more detail (Table~\ref{tab:examples}), and does any of the four met
 [7]~Vedantam et al. CIDEr: consensus-based image description evaluation. \emph{CVPR}, 2015.
 [8]~Hessel et al. CLIPScore: a reference-free evaluation metric for image captioning. \emph{EMNLP}, 2021.
 \par}
+
+\clearpage
+\section*{Appendix: Supplementary Results}
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}l rrr rrr rrr rrr@{}}
+\toprule
+ & \multicolumn{3}{c}{BLEU-4} & \multicolumn{3}{c}{METEOR} & \multicolumn{3}{c}{CIDEr-D} & \multicolumn{3}{c}{CLIPScore} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}
+Condition & far & shift & near & far & shift & near & far & shift & near & far & shift & near \\
+\midrule
+Decoder, plain (3 seeds) & 20 & 26 & 65 & 51 & 56 & 83 & 8 & 14 & 65 & 57 & 67 & 90 \\
+Decoder, relation (3 seeds) & 14 & 26 & 69 & 48 & 55 & 82 & 6 & 15 & 63 & 59 & 68 & 91 \\
+BLIP base, zero-shot & 0 & 14 & 40 & 34 & 41 & 63 & 1 & 8 & 34 & 56 & 65 & 85 \\
+BLIP large, zero-shot & 6 & 10 & 37 & 35 & 42 & 61 & 3 & 7 & 30 & 51 & 60 & 82 \\
+BLIP base, fine-tuned (3 seeds) & 1 & 10 & 35 & 32 & 38 & 58 & 1 & 5 & 26 & 43 & 53 & 78 \\
+\bottomrule
+\end{tabular}
+\caption{Blind share (\%) under three rules for the other image. \emph{far}: the
+least similar photo. \emph{shift}: the five index shifts of
+Table~\ref{tab:results}. \emph{near}: the most similar photo. The mean CLIP
+image similarity of a pair is 0.40, 0.50, and 0.72.}
+\label{tab:rules}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}l rrrrr rr@{}}
+\toprule
+Seed & BLEU-4 & METEOR & CIDEr-D & CIDEr-D 95\% interval & CLIPScore & Search loss & s per caption \\
+\midrule
+17 & 35.2 & 58.9 & 1.08 & 0.98--1.19 & 0.81 & 1.809 & 0.37 \\
+29 & 34.5 & 59.7 & 1.05 & 0.95--1.15 & 0.81 & 1.811 & 0.35 \\
+43 & 35.4 & 59.9 & 1.07 & 0.98--1.17 & 0.81 & 1.813 & 0.35 \\
+\bottomrule
+\end{tabular}
+\caption{Fine-tuned BLIP base, one row per seed, on the 200 confirmation
+images. The search loss was 3.261 before training. Caption time is on a Tesla
+T4. Zero-shot BLIP base took 0.22 s per caption, BLIP large 0.44 s, and the plain decoder 0.01 s.
+One Colab notebook ran all conditions in 233 minutes. Each fine-tuning seed took 73 minutes.}
+\label{tab:seeds}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/finetune-split.pdf}
+\caption{Relative gain from fine-tuning BLIP base, divided into the part that
+appears on other images and the part that needs the own image.}
+\label{fig:split}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\textwidth}
+\centering
+\includegraphics[width=\textwidth]{figures/decoder-curves.pdf}
+\caption{Loss curves of the six decoders. Each run keeps the epoch
+with the lowest search loss (epoch 5 to 7).}
+\label{fig:curves}
+\end{minipage}
+\end{figure}
 
 \clearpage
 \thispagestyle{empty}

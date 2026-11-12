@@ -1,0 +1,47 @@
+{
+ "schema": "captionbench-finetune/v1",
+ "base_model": "Salesforce/blip-image-captioning-base",
+ "base_revision": "82a37760796d32b1411fe092ab5d4e227313294b",
+ "checkpoint_sha256": "33ec8ccfd612f2ee2a0d9662066b55b27952001983505b5184b274eb6b0f6c6d",
+ "best": {
+  "epoch": 2,
+  "search_loss": 1.808509539604187
+ },
+ "history": [
+  {
+   "epoch": 0,
+   "train_loss": null,
+   "search_loss": 3.2611757221221924,
+   "elapsed_seconds": 0.0
+  },
+  {
+   "epoch": 1,
+   "train_loss": 1.965091786924998,
+   "search_loss": 1.8384612135887146,
+   "elapsed_seconds": 2086.335669586
+  },
+  {
+   "epoch": 2,
+   "train_loss": 1.5020418124516806,
+   "search_loss": 1.808509539604187,
+   "elapsed_seconds": 2082.839861077
+  }
+ ],
+ "train_images": 6000,
+ "train_pairs": 30000,
+ "search_images": 800,
+ "predicted_images": 200,
+ "settings": {
+  "epochs": 2,
+  "batch_size": 8,
+  "learning_rate": 1e-05,
+  "weight_decay": 0.05,
+  "max_length": 40,
+  "seed": 17
+ },
+ "schedule": "AdamW, one-cycle cosine, 10% warm-up, gradient clip 1.0, fp16 autocast for training",
+ "text_normalization": "lowercase and strip the reference captions",
+ "device": "Tesla T4",
+ "torch_version": "2.14.1+cu130",
+ "transformers_version": "5.22.1"
+}

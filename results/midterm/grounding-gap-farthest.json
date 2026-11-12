@@ -17,15 +17,14 @@
  },
  "prediction_files": [
   "confirm-blip-base-ft-s17.jsonl",
+  "confirm-blip-base-ft-s29.jsonl",
+  "confirm-blip-base-ft-s43.jsonl",
   "confirm-decoder-plain-s17.jsonl",
   "confirm-decoder-plain-s29.jsonl",
   "confirm-decoder-plain-s43.jsonl",
   "confirm-decoder-relation-s17.jsonl",
   "confirm-decoder-relation-s29.jsonl",
   "confirm-decoder-relation-s43.jsonl",
-  "confirm-decoder-relation-wd01-s17.jsonl",
-  "confirm-decoder-relation-wd01-s29.jsonl",
-  "confirm-decoder-relation-wd01-s43.jsonl",
   "val-blip-base.jsonl",
   "val-blip-large.jsonl",
   "val-generic.jsonl"
@@ -37,14 +36,23 @@
   "bleu4_sentence": "nltk.translate.bleu_score.sentence_bleu; method1 epsilon=0.1; auto_reweigh=False; scale 0-1",
   "meteor": "nltk.translate.meteor_score.meteor_score; best of five references; default alpha=0.9 beta=3 gamma=0.5",
   "cider_d": "captionbench.evaluation.cider_d; n=1-4; sigma=6; document frequency over the evaluated reference images; scale 0-10; WordPunct tokens; no PTB tokenizer or stemming",
-  "clipscore": null,
-  "nltk_version": "3.10.4"
+  "clipscore": {
+   "model_id": "openai/clip-vit-base-patch32",
+   "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+   "prefix": "A photo depicting ",
+   "weight": 2.5,
+   "formula": "2.5 * max(cosine(image, text), 0); reference-free",
+   "device": "cuda",
+   "torch_version": "2.14.1+cu130",
+   "transformers_version": "5.22.1"
+  },
+  "nltk_version": "3.9.1"
  },
  "models": {
   "blip-base": {
    "image_count": 200,
    "caption_tokens_mean": 6.745,
-   "mean_latency_seconds": 0.11631005850096698,
+   "mean_latency_seconds": 0.2150708857650011,
    "condition": {
     "model_id": "Salesforce/blip-image-captioning-base",
     "revision": "82a37760796d32b1411fe092ab5d4e227313294b",
@@ -55,10 +63,10 @@
      "num_beams": 3
     },
     "device": "cuda",
-    "device_name": "NVIDIA GeForce RTX 5070",
+    "device_name": "Tesla T4",
     "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
-    "torch_version": "2.12.0.dev20260407+cu128",
-    "transformers_version": "5.5.0"
+    "torch_version": "2.14.1+cu130",
+    "transformers_version": "5.22.1"
    },
    "metrics": {
     "bleu4_corpus": {
@@ -108,16 +116,30 @@
       0.617929801130404
      ],
      "blind_share": 0.014606612052762005
+    },
+    "clipscore": {
+     "matched": 0.7199457561597228,
+     "mismatched": 0.4059511533007026,
+     "gap": 0.31399460285902026,
+     "matched_ci95": [
+      0.7084796573966742,
+      0.731214614957571
+     ],
+     "gap_ci95": [
+      0.2951568975113332,
+      0.3328207359649241
+     ],
+     "blind_share": 0.5638635269774973
     }
    }
   },
   "blip-base-ft-s17": {
    "image_count": 200,
-   "caption_tokens_mean": 12.07,
-   "mean_latency_seconds": 0.1878803655001684,
+   "caption_tokens_mean": 12.095,
+   "mean_latency_seconds": 0.3679150056050321,
    "condition": {
     "model_id": "Salesforce/blip-image-captioning-base fine-tuned on Flickr8k train",
-    "revision": "31ff084f16065eb938126af3afb475c42b827962",
+    "revision": "33ec8ccfd612f2ee2a0d9662066b55b279520019",
     "precision": "float32",
     "generation": {
      "do_sample": false,
@@ -125,66 +147,248 @@
      "num_beams": 3
     },
     "device": "cuda",
-    "device_name": "NVIDIA GeForce RTX 5070",
+    "device_name": "Tesla T4",
     "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
-    "torch_version": "2.12.0.dev20260407+cu128",
-    "transformers_version": "5.5.0"
+    "torch_version": "2.14.1+cu130",
+    "transformers_version": "5.22.1"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.35457683414823743,
-     "mismatched": 0.012594454543879677,
-     "gap": 0.34198237960435773,
-     "blind_share": 0.03551967678354963
+     "matched": 0.35179895170460557,
+     "mismatched": 0.01037361733757654,
+     "gap": 0.34142533436702904,
+     "blind_share": 0.029487345790293707
     },
     "bleu4_sentence": {
-     "matched": 0.31397250987114594,
-     "mismatched": 0.03420846077867521,
-     "gap": 0.27976404909247077,
+     "matched": 0.3073839150501996,
+     "mismatched": 0.03349193476248626,
+     "gap": 0.27389198028771333,
      "matched_ci95": [
-      0.28168403211214277,
-      0.3471401428118805
+      0.2751631213772908,
+      0.3414832947876609
      ],
      "gap_ci95": [
-      0.24733803751062078,
-      0.3125485628000568
+      0.2420419110165939,
+      0.30852248962686896
      ],
-     "blind_share": 0.10895368130386426
+     "blind_share": 0.10895799396990768
     },
     "meteor": {
-     "matched": 0.5955652229536987,
-     "mismatched": 0.1942231186269987,
-     "gap": 0.40134210432670003,
+     "matched": 0.5893919013242815,
+     "mismatched": 0.193677167898446,
+     "gap": 0.3957147334258356,
      "matched_ci95": [
-      0.5696755031536611,
-      0.6206019520094219
+      0.563683797171565,
+      0.615351417114584
      ],
      "gap_ci95": [
-      0.3743841315266449,
-      0.42877014523283696
+      0.36741887499937087,
+      0.42338546106962843
      ],
-     "blind_share": 0.32611561444731685
+     "blind_share": 0.3286050715377669
     },
     "cider_d": {
-     "matched": 1.098318477913111,
-     "mismatched": 0.01661352905430329,
-     "gap": 1.0817049488588075,
+     "matched": 1.0832370866984524,
+     "mismatched": 0.015841450506727216,
+     "gap": 1.067395636191725,
      "matched_ci95": [
-      0.9974167763299384,
-      1.2031481499992132
+      0.9763852506235342,
+      1.1913093550264167
      ],
      "gap_ci95": [
-      0.9815535014764439,
-      1.1874457442766932
+      0.9606323024976211,
+      1.175523545682019
      ],
-     "blind_share": 0.015126331194819069
+     "blind_share": 0.014624176647246847
+    },
+    "clipscore": {
+     "matched": 0.8094323586672545,
+     "mismatched": 0.34818805595859886,
+     "gap": 0.4612443027086556,
+     "matched_ci95": [
+      0.7984966270625591,
+      0.8206036496907473
+     ],
+     "gap_ci95": [
+      0.4430862315930426,
+      0.47792373690754175
+     ],
+     "blind_share": 0.4301632523462455
+    }
+   }
+  },
+  "blip-base-ft-s29": {
+   "image_count": 200,
+   "caption_tokens_mean": 12.17,
+   "mean_latency_seconds": 0.35358284007496876,
+   "condition": {
+    "model_id": "Salesforce/blip-image-captioning-base fine-tuned on Flickr8k train",
+    "revision": "0680fa3c434793810b97e9b4a0e099f28ce6a9c4",
+    "precision": "float32",
+    "generation": {
+     "do_sample": false,
+     "max_new_tokens": 32,
+     "num_beams": 3
+    },
+    "device": "cuda",
+    "device_name": "Tesla T4",
+    "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
+    "torch_version": "2.14.1+cu130",
+    "transformers_version": "5.22.1"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.3453646562176928,
+     "mismatched": 8.254573234629515e-79,
+     "gap": 0.3453646562176928,
+     "blind_share": 2.3901036443713084e-78
+    },
+    "bleu4_sentence": {
+     "matched": 0.30366985029653243,
+     "mismatched": 0.032689070290415755,
+     "gap": 0.2709807800061167,
+     "matched_ci95": [
+      0.2741296020374003,
+      0.3345876180240226
+     ],
+     "gap_ci95": [
+      0.24117874710646706,
+      0.30101195852865315
+     ],
+     "blind_share": 0.10764674286398536
+    },
+    "meteor": {
+     "matched": 0.5964836009085512,
+     "mismatched": 0.18668210902426266,
+     "gap": 0.4098014918842886,
+     "matched_ci95": [
+      0.5719901529991345,
+      0.620817624643582
+     ],
+     "gap_ci95": [
+      0.3845892728398191,
+      0.43536361557422554
+     ],
+     "blind_share": 0.31297106699985117
+    },
+    "cider_d": {
+     "matched": 1.0534930369509756,
+     "mismatched": 0.012130517689777149,
+     "gap": 1.0413625192611984,
+     "matched_ci95": [
+      0.9546143034676033,
+      1.1500955213824557
+     ],
+     "gap_ci95": [
+      0.9427355885602446,
+      1.137487637493754
+     ],
+     "blind_share": 0.011514568453993155
+    },
+    "clipscore": {
+     "matched": 0.8099659563973546,
+     "mismatched": 0.3438506281469017,
+     "gap": 0.4661153282504529,
+     "matched_ci95": [
+      0.799199067428708,
+      0.8199892589822412
+     ],
+     "gap_ci95": [
+      0.4482886514160782,
+      0.4822056209668517
+     ],
+     "blind_share": 0.4245247907409763
+    }
+   }
+  },
+  "blip-base-ft-s43": {
+   "image_count": 200,
+   "caption_tokens_mean": 12.145,
+   "mean_latency_seconds": 0.3492232630550643,
+   "condition": {
+    "model_id": "Salesforce/blip-image-captioning-base fine-tuned on Flickr8k train",
+    "revision": "325d23830f6338a7f312300554199ff07ab030df",
+    "precision": "float32",
+    "generation": {
+     "do_sample": false,
+     "max_new_tokens": 32,
+     "num_beams": 3
+    },
+    "device": "cuda",
+    "device_name": "Tesla T4",
+    "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
+    "torch_version": "2.14.1+cu130",
+    "transformers_version": "5.22.1"
+   },
+   "metrics": {
+    "bleu4_corpus": {
+     "matched": 0.3541572941041635,
+     "mismatched": 8.749048065672408e-79,
+     "gap": 0.3541572941041635,
+     "blind_share": 2.470384829374478e-78
+    },
+    "bleu4_sentence": {
+     "matched": 0.3096590049146882,
+     "mismatched": 0.032390598857370584,
+     "gap": 0.27726840605731756,
+     "matched_ci95": [
+      0.28057339916009316,
+      0.3401221205293914
+     ],
+     "gap_ci95": [
+      0.24806080475473596,
+      0.3076661043572747
+     ],
+     "blind_share": 0.1046008620556482
+    },
+    "meteor": {
+     "matched": 0.5987705888948451,
+     "mismatched": 0.19103672481259426,
+     "gap": 0.40773386408225076,
+     "matched_ci95": [
+      0.5743629926635406,
+      0.6221099824390889
+     ],
+     "gap_ci95": [
+      0.38084350216771445,
+      0.43366301368035187
+     ],
+     "blind_share": 0.31904827717939854
+    },
+    "cider_d": {
+     "matched": 1.0735915033846266,
+     "mismatched": 0.014981337993829908,
+     "gap": 1.0586101653907967,
+     "matched_ci95": [
+      0.9758142950251625,
+      1.1727756659530018
+     ],
+     "gap_ci95": [
+      0.9611701995548794,
+      1.1578515367229667
+     ],
+     "blind_share": 0.013954411847149902
+    },
+    "clipscore": {
+     "matched": 0.8079642958939075,
+     "mismatched": 0.3447578263003379,
+     "gap": 0.46320646959356965,
+     "matched_ci95": [
+      0.7970628766342998,
+      0.8187401801347732
+     ],
+     "gap_ci95": [
+      0.44583049905486405,
+      0.48022725121118126
+     ],
+     "blind_share": 0.42669933319133635
     }
    }
   },
   "blip-large": {
    "image_count": 200,
    "caption_tokens_mean": 13.09,
-   "mean_latency_seconds": 0.46286699000032966,
+   "mean_latency_seconds": 0.4376495304950072,
    "condition": {
     "model_id": "Salesforce/blip-image-captioning-large",
     "revision": "353689b859fcf0523410b1806dace5fb46ecdf41",
@@ -195,10 +399,10 @@
      "num_beams": 3
     },
     "device": "cuda",
-    "device_name": "NVIDIA GeForce RTX 5070",
+    "device_name": "Tesla T4",
     "latency_scope": "preprocessing + generation + decoding; excludes model load and image I/O",
-    "torch_version": "2.12.0.dev20260407+cu128",
-    "transformers_version": "5.5.0"
+    "torch_version": "2.14.1+cu130",
+    "transformers_version": "5.22.1"
    },
    "metrics": {
     "bleu4_corpus": {
@@ -248,607 +452,519 @@
       0.7508755093485783
      ],
      "blind_share": 0.03314129929764391
+    },
+    "clipscore": {
+     "matched": 0.7557278046384454,
+     "mismatched": 0.3834680861327797,
+     "gap": 0.37225971850566564,
+     "matched_ci95": [
+      0.7445031171664596,
+      0.7661285661160946
+     ],
+     "gap_ci95": [
+      0.3535346307326108,
+      0.38981414535082876
+     ],
+     "blind_share": 0.5074156115193329
     }
    }
   },
   "decoder-plain-s17": {
    "image_count": 200,
-   "caption_tokens_mean": 10.885,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 10.675,
+   "mean_latency_seconds": 0.01062218113999961,
    "condition": {
-    "model_id": "captionbench/decoder-plain",
-    "revision": "8308d85baecdd57157da6397ab42fc93b2f1e476",
+    "model_id": "CaptionBench plain decoder from scratch on frozen resnet18 (width 128, 2 layers, 1611232 parameters)",
+    "revision": "2a08d2ae7cb91830ad03c20b55214f6c625cc995",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.18211210256695753,
-     "mismatched": 0.033208803114894755,
-     "gap": 0.14890329945206277,
-     "blind_share": 0.18235363079554148
+     "matched": 0.18448347470924703,
+     "mismatched": 0.03979224638763703,
+     "gap": 0.14469122832161,
+     "blind_share": 0.215695451586388
     },
     "bleu4_sentence": {
-     "matched": 0.1624068384634747,
-     "mismatched": 0.043762850087178354,
-     "gap": 0.11864398837629633,
+     "matched": 0.16387954842386768,
+     "mismatched": 0.047559701202241775,
+     "gap": 0.11631984722162592,
      "matched_ci95": [
-      0.14075571540682114,
-      0.1860724448335016
+      0.13881485271957095,
+      0.19263445498873621
      ],
      "gap_ci95": [
-      0.09544222774093085,
-      0.14465266334203802
+      0.08983907747441747,
+      0.14645842499825198
      ],
-     "blind_share": 0.269464331066457
+     "blind_share": 0.2902113269145127
     },
     "meteor": {
-     "matched": 0.3492886759943001,
-     "mismatched": 0.17132881562804017,
-     "gap": 0.17795986036625994,
+     "matched": 0.3433608245121322,
+     "mismatched": 0.17399965122452785,
+     "gap": 0.1693611732876043,
      "matched_ci95": [
-      0.32736613742745874,
-      0.3740199295364776
+      0.32025722800800815,
+      0.3690429085426248
      ],
      "gap_ci95": [
-      0.15018896024271522,
-      0.20784838774511255
+      0.1412274297316291,
+      0.19927149453807147
      ],
-     "blind_share": 0.4905077874063001
+     "blind_share": 0.5067545241125194
     },
     "cider_d": {
-     "matched": 0.41322501221498925,
-     "mismatched": 0.031331577942848424,
-     "gap": 0.3818934342721408,
+     "matched": 0.4123625178481623,
+     "mismatched": 0.03040621523192095,
+     "gap": 0.38195630261624136,
      "matched_ci95": [
-      0.35412174640443433,
-      0.4824714138050462
+      0.3455945626215766,
+      0.4909407099089094
      ],
      "gap_ci95": [
-      0.3179962278310222,
-      0.4534666296551994
+      0.3147200467502976,
+      0.46094220135691427
      ],
-     "blind_share": 0.07582207518103355
+     "blind_share": 0.0737366126062819
+    },
+    "clipscore": {
+     "matched": 0.6567548401653767,
+     "mismatched": 0.38239184985868635,
+     "gap": 0.2743629903066903,
+     "matched_ci95": [
+      0.6423451568931341,
+      0.6713472932577134
+     ],
+     "gap_ci95": [
+      0.2523245353717357,
+      0.29514951943419876
+     ],
+     "blind_share": 0.58224443349728
     }
    }
   },
   "decoder-plain-s29": {
    "image_count": 200,
-   "caption_tokens_mean": 11.14,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 11.675,
+   "mean_latency_seconds": 0.010170576579998852,
    "condition": {
-    "model_id": "captionbench/decoder-plain",
-    "revision": "30a247110c1215a12bac59fded6fc443e0a06e13",
+    "model_id": "CaptionBench plain decoder from scratch on frozen resnet18 (width 128, 2 layers, 1611232 parameters)",
+    "revision": "63c6a3843169fbeab22d5af65a1457052ae7af50",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.17150639230855755,
-     "mismatched": 0.03253464396472222,
-     "gap": 0.13897174834383533,
-     "blind_share": 0.1896993081528359
+     "matched": 0.1863822004287123,
+     "mismatched": 0.03187294792275734,
+     "gap": 0.15450925250595499,
+     "blind_share": 0.17100853970735336
     },
     "bleu4_sentence": {
-     "matched": 0.15443171996375601,
-     "mismatched": 0.043100018357964884,
-     "gap": 0.11133170160579113,
+     "matched": 0.17174642499574308,
+     "mismatched": 0.042272956597643525,
+     "gap": 0.12947346839809953,
      "matched_ci95": [
-      0.1320596345930652,
-      0.17934982888347764
+      0.1452863759559874,
+      0.20128460621388367
      ],
      "gap_ci95": [
-      0.08786686455138833,
-      0.13648435783454874
+      0.10197614011834652,
+      0.15944536948945906
      ],
-     "blind_share": 0.27908786075865855
+     "blind_share": 0.24613587501859968
     },
     "meteor": {
-     "matched": 0.3436271220087882,
-     "mismatched": 0.1767082883134509,
-     "gap": 0.16691883369533728,
+     "matched": 0.3441279294040199,
+     "mismatched": 0.17313380450060936,
+     "gap": 0.1709941249034105,
      "matched_ci95": [
-      0.3199354592979691,
-      0.36630225967804086
+      0.32275209930416277,
+      0.36734594820380084
      ],
      "gap_ci95": [
-      0.13929791262718702,
-      0.19434538380616634
+      0.1442883188248466,
+      0.19902733854629281
      ],
-     "blind_share": 0.5142442985304624
+     "blind_share": 0.5031088432736401
     },
     "cider_d": {
-     "matched": 0.4094935393162056,
-     "mismatched": 0.03189833474690411,
-     "gap": 0.37759520456930146,
+     "matched": 0.42582281853761905,
+     "mismatched": 0.02923285424182896,
+     "gap": 0.3965899642957901,
      "matched_ci95": [
-      0.344672683912491,
-      0.4844608017174036
+      0.359018111409192,
+      0.5108703615931114
      ],
      "gap_ci95": [
-      0.30944133117014344,
-      0.4530637985938399
+      0.3271662961805069,
+      0.4832916155859017
      ],
-     "blind_share": 0.07789704032979292
+     "blind_share": 0.06865027652163361
+    },
+    "clipscore": {
+     "matched": 0.6516792661510408,
+     "mismatched": 0.3713888504076749,
+     "gap": 0.2802904157433659,
+     "matched_ci95": [
+      0.6368392848409712,
+      0.6666384602896869
+     ],
+     "gap_ci95": [
+      0.2605220237746835,
+      0.3007177013438195
+     ],
+     "blind_share": 0.56989514581487
     }
    }
   },
   "decoder-plain-s43": {
    "image_count": 200,
-   "caption_tokens_mean": 10.68,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 10.79,
+   "mean_latency_seconds": 0.009849783105000825,
    "condition": {
-    "model_id": "captionbench/decoder-plain",
-    "revision": "1bdbf7da266d4d60d0e992d5106cd2bf03c46705",
+    "model_id": "CaptionBench plain decoder from scratch on frozen resnet18 (width 128, 2 layers, 1611232 parameters)",
+    "revision": "b18b6b1ef5027a2faeff0569efb262ad6d029d80",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.1891070330180713,
-     "mismatched": 0.032666549518008736,
-     "gap": 0.15644048350006257,
-     "blind_share": 0.1727410609571939
+     "matched": 0.16803054687802127,
+     "mismatched": 0.036392702399271136,
+     "gap": 0.13163784447875013,
+     "blind_share": 0.21658384785053256
     },
     "bleu4_sentence": {
-     "matched": 0.16290748882713055,
-     "mismatched": 0.04340187010013306,
-     "gap": 0.11950561872699747,
+     "matched": 0.14735352912471278,
+     "mismatched": 0.046208130383028866,
+     "gap": 0.10114539874168389,
      "matched_ci95": [
-      0.13841406656412358,
-      0.19144614395138457
+      0.12720308498131727,
+      0.16961086001743703
      ],
      "gap_ci95": [
-      0.09373577542564446,
-      0.14872789693537514
+      0.07929750446110834,
+      0.12518246548294845
      ],
-     "blind_share": 0.2664203494425538
+     "blind_share": 0.31358685915096457
     },
     "meteor": {
-     "matched": 0.34638438055184784,
-     "mismatched": 0.16758726742531277,
-     "gap": 0.1787971131265351,
+     "matched": 0.34155487138522456,
+     "mismatched": 0.17754090400327066,
+     "gap": 0.16401396738195387,
      "matched_ci95": [
-      0.322908661103088,
-      0.3725939358963452
+      0.3195765014958119,
+      0.3642001691799428
      ],
      "gap_ci95": [
-      0.15039701549803103,
-      0.20912527546825113
+      0.13575303639627967,
+      0.19254240511660609
      ],
-     "blind_share": 0.4838187771582495
+     "blind_share": 0.5198019963329118
     },
     "cider_d": {
-     "matched": 0.42372610124321847,
-     "mismatched": 0.026979346365686455,
-     "gap": 0.39674675487753197,
+     "matched": 0.3946044890919063,
+     "mismatched": 0.03313472505411546,
+     "gap": 0.36146976403779085,
      "matched_ci95": [
-      0.3602207619976645,
-      0.499580628796954
+      0.33736214806035464,
+      0.4576971503396864
      ],
      "gap_ci95": [
-      0.331322243402906,
-      0.4735629795071486
+      0.30067846741562165,
+      0.42575358655011863
      ],
-     "blind_share": 0.06367166498955024
+     "blind_share": 0.08396945795109324
+    },
+    "clipscore": {
+     "matched": 0.6553232511505485,
+     "mismatched": 0.37349275941960514,
+     "gap": 0.2818304917309433,
+     "matched_ci95": [
+      0.6394845020025969,
+      0.671901873126626
+     ],
+     "gap_ci95": [
+      0.2585273808799684,
+      0.30330457794480026
+     ],
+     "blind_share": 0.5699366820326691
     }
    }
   },
   "decoder-relation-s17": {
    "image_count": 200,
-   "caption_tokens_mean": 11.015,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 10.765,
+   "mean_latency_seconds": 0.010418540890000258,
    "condition": {
-    "model_id": "captionbench/decoder-relation",
-    "revision": "37948ba52944f71cf40f4c4e90031caad9b1d6e2",
+    "model_id": "CaptionBench relation decoder from scratch on frozen resnet18 (width 128, 2 layers, 1677796 parameters)",
+    "revision": "c65321f9c934d6b5e93713ae9ebad99f5179661f",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.18090315314593933,
-     "mismatched": 0.02684500049778198,
-     "gap": 0.15405815264815734,
-     "blind_share": 0.14839432055739465
+     "matched": 0.18410580698828521,
+     "mismatched": 0.020431658906750423,
+     "gap": 0.1636741480815348,
+     "blind_share": 0.11097780803867041
     },
     "bleu4_sentence": {
-     "matched": 0.1667698693581453,
-     "mismatched": 0.04114172950011562,
-     "gap": 0.12562813985802967,
+     "matched": 0.16920812788231387,
+     "mismatched": 0.04080549811292675,
+     "gap": 0.12840262976938713,
      "matched_ci95": [
-      0.1419927646491688,
-      0.194950790302058
+      0.14366855836559875,
+      0.19735258311932907
      ],
      "gap_ci95": [
-      0.1004229967739342,
-      0.15418744271106816
+      0.10208065988577378,
+      0.15712262453919404
      ],
-     "blind_share": 0.24669761785183164
+     "blind_share": 0.2411556621045262
     },
     "meteor": {
-     "matched": 0.3498547509926515,
-     "mismatched": 0.16596020753475876,
-     "gap": 0.18389454345789275,
+     "matched": 0.3578655213847186,
+     "mismatched": 0.17129032795664542,
+     "gap": 0.18657519342807316,
      "matched_ci95": [
-      0.32767886742961044,
-      0.37310997142692315
+      0.3333713389749442,
+      0.38223648809804556
      ],
      "gap_ci95": [
-      0.1558023234912802,
-      0.21220772220806222
+      0.15641732736487998,
+      0.21620756488749826
      ],
-     "blind_share": 0.47436888326905885
+     "blind_share": 0.47864440053866497
     },
     "cider_d": {
-     "matched": 0.42347120549120987,
-     "mismatched": 0.026803341971189484,
-     "gap": 0.3966678635200204,
+     "matched": 0.4445620143880466,
+     "mismatched": 0.02379418337766914,
+     "gap": 0.42076783101037746,
      "matched_ci95": [
-      0.35431548962567305,
-      0.5041569961712183
+      0.37469664088739196,
+      0.5232110636419406
      ],
      "gap_ci95": [
-      0.32523001336344926,
-      0.4769943841598706
+      0.3486622794364183,
+      0.49950241514500654
      ],
-     "blind_share": 0.06329436718158597
+     "blind_share": 0.05352275409859875
+    },
+    "clipscore": {
+     "matched": 0.6513679153285921,
+     "mismatched": 0.380103780515492,
+     "gap": 0.2712641348131001,
+     "matched_ci95": [
+      0.6347058821469546,
+      0.6667324805632233
+     ],
+     "gap_ci95": [
+      0.24939599642530083,
+      0.29174518417567014
+     ],
+     "blind_share": 0.5835469810080269
     }
    }
   },
   "decoder-relation-s29": {
    "image_count": 200,
-   "caption_tokens_mean": 11.21,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 10.315,
+   "mean_latency_seconds": 0.016211901599999693,
    "condition": {
-    "model_id": "captionbench/decoder-relation",
-    "revision": "6cc5b615927d25a2989b7002ad5802f4e7c8536a",
+    "model_id": "CaptionBench relation decoder from scratch on frozen resnet18 (width 128, 2 layers, 1677796 parameters)",
+    "revision": "f249e019425aadb0e2060aa7758ff6b211a138d3",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.1691936123753573,
-     "mismatched": 0.023749938439551647,
-     "gap": 0.14544367393580565,
-     "blind_share": 0.14037136571599543
+     "matched": 0.1782290848388701,
+     "mismatched": 0.026986998878401895,
+     "gap": 0.1512420859604682,
+     "blind_share": 0.1514174799404922
     },
     "bleu4_sentence": {
-     "matched": 0.1512664207201097,
-     "mismatched": 0.040300126931621466,
-     "gap": 0.11096629378848823,
+     "matched": 0.1551857463167589,
+     "mismatched": 0.0435435120599767,
+     "gap": 0.11164223425678221,
      "matched_ci95": [
-      0.12898899469297923,
-      0.1780155859335161
+      0.13094658035389534,
+      0.18225916104282813
      ],
      "gap_ci95": [
-      0.08826892600767833,
-      0.13803101336230442
+      0.08643966335565105,
+      0.13913889595535855
      ],
-     "blind_share": 0.26641819605283934
+     "blind_share": 0.28058963592633973
     },
     "meteor": {
-     "matched": 0.34050858731176964,
-     "mismatched": 0.16748805063285707,
-     "gap": 0.17302053667891257,
+     "matched": 0.3435307403608784,
+     "mismatched": 0.16669296350127863,
+     "gap": 0.17683777685959978,
      "matched_ci95": [
-      0.31861289248708546,
-      0.3629987314459999
+      0.31985386800843707,
+      0.3681365111971618
      ],
      "gap_ci95": [
-      0.14608766407838536,
-      0.20039001584060098
+      0.1483611791554817,
+      0.20639510430468733
      ],
-     "blind_share": 0.49187614313968836
+     "blind_share": 0.4852344897174791
     },
     "cider_d": {
-     "matched": 0.3804764981084756,
-     "mismatched": 0.02003129643482682,
-     "gap": 0.3604452016736488,
+     "matched": 0.4086899643315619,
+     "mismatched": 0.027519265329066112,
+     "gap": 0.38117069900249584,
      "matched_ci95": [
-      0.31939154568732236,
-      0.4464898159272815
+      0.34148320330957527,
+      0.4900951860517768
      ],
      "gap_ci95": [
-      0.2971791158542297,
-      0.42690959538059664
+      0.3113497782040256,
+      0.463913175687437
      ],
-     "blind_share": 0.052647920527053964
+     "blind_share": 0.06733530972329012
+    },
+    "clipscore": {
+     "matched": 0.6444567086175084,
+     "mismatched": 0.3781690679723397,
+     "gap": 0.26628764064516874,
+     "matched_ci95": [
+      0.6292515741661191,
+      0.6596812376752496
+     ],
+     "gap_ci95": [
+      0.2452988281613216,
+      0.287441834108904
+     ],
+     "blind_share": 0.5868029037723725
     }
    }
   },
   "decoder-relation-s43": {
    "image_count": 200,
-   "caption_tokens_mean": 10.895,
-   "mean_latency_seconds": null,
+   "caption_tokens_mean": 10.395,
+   "mean_latency_seconds": 0.010320337680000194,
    "condition": {
-    "model_id": "captionbench/decoder-relation",
-    "revision": "bdd078d0b05af67843020c761eabdf151a57023d",
+    "model_id": "CaptionBench relation decoder from scratch on frozen resnet18 (width 128, 2 layers, 1677796 parameters)",
+    "revision": "b67bc2696db11c0931a03bc216c056e8e240cd7c",
     "precision": "float32",
     "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "max_new_tokens": 24,
+     "strategy": "greedy"
     },
     "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
+    "device_name": "Tesla T4",
+    "latency_scope": "decoder only, batched; the frozen feature extraction is excluded",
+    "torch_version": "2.14.1+cu130"
    },
    "metrics": {
     "bleu4_corpus": {
-     "matched": 0.17477228718223534,
-     "mismatched": 0.029836633404220915,
-     "gap": 0.14493565377801443,
-     "blind_share": 0.1707171879779213
+     "matched": 0.167618264830696,
+     "mismatched": 0.02611190399314092,
+     "gap": 0.14150636083755508,
+     "blind_share": 0.15578197292231505
     },
     "bleu4_sentence": {
-     "matched": 0.15302861233230455,
-     "mismatched": 0.04131202925248556,
-     "gap": 0.111716583079819,
+     "matched": 0.1490639774307491,
+     "mismatched": 0.04025541244536865,
+     "gap": 0.10880856498538043,
      "matched_ci95": [
-      0.13188121182298385,
-      0.1765493016089396
+      0.12471820561161875,
+      0.17480435500336924
      ],
      "gap_ci95": [
-      0.08982750458806939,
-      0.13567134607819997
+      0.08388169262091759,
+      0.13528795177042618
      ],
-     "blind_share": 0.26996277769790983
+     "blind_share": 0.270054597624501
     },
     "meteor": {
-     "matched": 0.34333596170345904,
-     "mismatched": 0.1675527448566139,
-     "gap": 0.17578321684684517,
+     "matched": 0.33571379425837633,
+     "mismatched": 0.15539173662922384,
+     "gap": 0.18032205762915246,
      "matched_ci95": [
-      0.32227265012440137,
-      0.36583747276067835
+      0.311850099831634,
+      0.35917053567328333
      ],
      "gap_ci95": [
-      0.14976562119708506,
-      0.20429339333893431
+      0.15271959763421386,
+      0.20861604472608977
      ],
-     "blind_share": 0.4880139675008178
+     "blind_share": 0.46286968032546577
     },
     "cider_d": {
-     "matched": 0.4040969489603301,
-     "mismatched": 0.02823769271842813,
-     "gap": 0.375859256241902,
+     "matched": 0.3784851346160012,
+     "mismatched": 0.024484870914013076,
+     "gap": 0.3540002637019881,
      "matched_ci95": [
-      0.3491393240301963,
-      0.4637167778773839
+      0.31381342484885527,
+      0.4534102356649052
      ],
      "gap_ci95": [
-      0.31877819547177016,
-      0.4385488683087331
+      0.2902470013688498,
+      0.43104546330624927
      ],
-     "blind_share": 0.06987851007308696
-    }
-   }
-  },
-  "decoder-relation-wd01-s17": {
-   "image_count": 200,
-   "caption_tokens_mean": 10.88,
-   "mean_latency_seconds": null,
-   "condition": {
-    "model_id": "captionbench/decoder-relation-wd01",
-    "revision": "7f7fa74a9af61fe608e60de66366c511919472e7",
-    "precision": "float32",
-    "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
+     "blind_share": 0.06469176375673152
     },
-    "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
-   },
-   "metrics": {
-    "bleu4_corpus": {
-     "matched": 0.1860716003719359,
-     "mismatched": 0.027529286696290744,
-     "gap": 0.15854231367564517,
-     "blind_share": 0.14794996464405552
-    },
-    "bleu4_sentence": {
-     "matched": 0.16672709841821706,
-     "mismatched": 0.040946410170874,
-     "gap": 0.12578068824734306,
+    "clipscore": {
+     "matched": 0.646093070320785,
+     "mismatched": 0.380795977730304,
+     "gap": 0.26529709259048107,
      "matched_ci95": [
-      0.1417340147326277,
-      0.19507136155440816
+      0.6288049785420299,
+      0.662050217948854
      ],
      "gap_ci95": [
-      0.10074283976253094,
-      0.15450901638002562
+      0.2438250889070332,
+      0.2855688349343836
      ],
-     "blind_share": 0.2455894126350374
-    },
-    "meteor": {
-     "matched": 0.3502320976314919,
-     "mismatched": 0.16127633237482944,
-     "gap": 0.18895576525666247,
-     "matched_ci95": [
-      0.3272064427244459,
-      0.3738338020175175
-     ],
-     "gap_ci95": [
-      0.1623346186982209,
-      0.21622162025699293
-     ],
-     "blind_share": 0.4604841574073019
-    },
-    "cider_d": {
-     "matched": 0.42451185208292475,
-     "mismatched": 0.027339213981446862,
-     "gap": 0.39717263810147785,
-     "matched_ci95": [
-      0.35484217287747283,
-      0.5024511794779923
-     ],
-     "gap_ci95": [
-      0.32628662002497144,
-      0.47547304091151377
-     ],
-     "blind_share": 0.0644015328366059
-    }
-   }
-  },
-  "decoder-relation-wd01-s29": {
-   "image_count": 200,
-   "caption_tokens_mean": 11.235,
-   "mean_latency_seconds": null,
-   "condition": {
-    "model_id": "captionbench/decoder-relation-wd01",
-    "revision": "29a5d80672b711faebdd8c24aeb64c5b7e925b80",
-    "precision": "float32",
-    "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
-    },
-    "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
-   },
-   "metrics": {
-    "bleu4_corpus": {
-     "matched": 0.17675509977865556,
-     "mismatched": 0.026344118251894165,
-     "gap": 0.15041098152676138,
-     "blind_share": 0.1490430447827758
-    },
-    "bleu4_sentence": {
-     "matched": 0.15715369793541634,
-     "mismatched": 0.041308969504411666,
-     "gap": 0.11584472843100467,
-     "matched_ci95": [
-      0.1349417567360126,
-      0.18394908240922095
-     ],
-     "gap_ci95": [
-      0.09345169011257011,
-      0.143810360585639
-     ],
-     "blind_share": 0.2628571267943561
-    },
-    "meteor": {
-     "matched": 0.34641399383258914,
-     "mismatched": 0.17092533162642223,
-     "gap": 0.17548866220616696,
-     "matched_ci95": [
-      0.32395957705812356,
-      0.36970224129923523
-     ],
-     "gap_ci95": [
-      0.1478225095504714,
-      0.20445570144818587
-     ],
-     "blind_share": 0.4934134725198919
-    },
-    "cider_d": {
-     "matched": 0.3990650640888619,
-     "mismatched": 0.022704238855085292,
-     "gap": 0.3763608252337766,
-     "matched_ci95": [
-      0.33766122874675863,
-      0.46773730546228004
-     ],
-     "gap_ci95": [
-      0.3143020964236822,
-      0.44536914994414983
-     ],
-     "blind_share": 0.05689357675777307
-    }
-   }
-  },
-  "decoder-relation-wd01-s43": {
-   "image_count": 200,
-   "caption_tokens_mean": 11.005,
-   "mean_latency_seconds": null,
-   "condition": {
-    "model_id": "captionbench/decoder-relation-wd01",
-    "revision": "2fd30675171ca04b88ca968193a4e8c51c6f9300",
-    "precision": "float32",
-    "generation": {
-     "decode": "greedy",
-     "max_new_tokens": 24
-    },
-    "device": "cuda",
-    "torch_version": "2.12.0.dev20260407+cu128"
-   },
-   "metrics": {
-    "bleu4_corpus": {
-     "matched": 0.16990012478377373,
-     "mismatched": 0.028478019115070204,
-     "gap": 0.14142210566870353,
-     "blind_share": 0.16761623425122987
-    },
-    "bleu4_sentence": {
-     "matched": 0.15119797443439942,
-     "mismatched": 0.04094163755619971,
-     "gap": 0.11025633687819969,
-     "matched_ci95": [
-      0.1303823201600684,
-      0.17488514168818659
-     ],
-     "gap_ci95": [
-      0.08882332973364244,
-      0.13463291346717898
-     ],
-     "blind_share": 0.2707816537182721
-    },
-    "meteor": {
-     "matched": 0.34126822092866876,
-     "mismatched": 0.16704897871317625,
-     "gap": 0.1742192422154925,
-     "matched_ci95": [
-      0.32056284189183,
-      0.3627694787447716
-     ],
-     "gap_ci95": [
-      0.14724531794930285,
-      0.2021713253737273
-     ],
-     "blind_share": 0.4894946803385262
-    },
-    "cider_d": {
-     "matched": 0.4059288508137401,
-     "mismatched": 0.026931922974401903,
-     "gap": 0.37899692783933825,
-     "matched_ci95": [
-      0.34989061458636805,
-      0.46786921383390456
-     ],
-     "gap_ci95": [
-      0.3202748874460029,
-      0.4422888779394744
-     ],
-     "blind_share": 0.06634641248192427
+     "blind_share": 0.5893825444393621
     }
    }
   },
   "generic": {
    "image_count": 200,
    "caption_tokens_mean": 8.0,
-   "mean_latency_seconds": 3.9700025808997454e-07,
+   "mean_latency_seconds": 5.019500001424148e-07,
    "condition": {
     "model_id": "captionbench/generic-negative-control",
     "revision": "v1",
@@ -906,6 +1022,20 @@
       0.008796296464091297
      ],
      "blind_share": 1.0
+    },
+    "clipscore": {
+     "matched": 0.5382608484476805,
+     "mismatched": 0.5382608504965901,
+     "gap": -2.048909664154053e-09,
+     "matched_ci95": [
+      0.5324403248727322,
+      0.5440340243279934
+     ],
+     "gap_ci95": [
+      -0.009395922906696797,
+      0.009426836110651492
+     ],
+     "blind_share": 1.0000000038065366
     }
    }
   }

@@ -2,29 +2,29 @@
  "schema": "captionbench-finetune/v1",
  "base_model": "Salesforce/blip-image-captioning-base",
  "base_revision": "82a37760796d32b1411fe092ab5d4e227313294b",
- "checkpoint_sha256": "31ff084f16065eb938126af3afb475c42b827962b3ad6fd8bdac4b30e139a739",
+ "checkpoint_sha256": "325d23830f6338a7f312300554199ff07ab030df603546415895b83920e6db08",
  "best": {
   "epoch": 2,
-  "search_loss": 1.8088272562026977
+  "search_loss": 1.8126807894706727
  },
  "history": [
   {
    "epoch": 0,
    "train_loss": null,
-   "search_loss": 3.261157759666443,
+   "search_loss": 3.2611757221221924,
    "elapsed_seconds": 0.0
   },
   {
    "epoch": 1,
-   "train_loss": 1.9651163116455077,
-   "search_loss": 1.8370402894020081,
-   "elapsed_seconds": 732.0498671000241
+   "train_loss": 1.9639066054026286,
+   "search_loss": 1.8358260269165039,
+   "elapsed_seconds": 2084.1625781679995
   },
   {
    "epoch": 2,
-   "train_loss": 1.5020075957139334,
-   "search_loss": 1.8088272562026977,
-   "elapsed_seconds": 691.9613675000146
+   "train_loss": 1.502449743827184,
+   "search_loss": 1.8126807894706727,
+   "elapsed_seconds": 2079.2005394690004
   }
  ],
  "train_images": 6000,
@@ -37,11 +37,11 @@
   "learning_rate": 1e-05,
   "weight_decay": 0.05,
   "max_length": 40,
-  "seed": 17
+  "seed": 43
  },
  "schedule": "AdamW, one-cycle cosine, 10% warm-up, gradient clip 1.0, fp16 autocast for training",
  "text_normalization": "lowercase and strip the reference captions",
- "device": "NVIDIA GeForce RTX 5070",
- "torch_version": "2.12.0.dev20260407+cu128",
- "transformers_version": "5.5.0"
+ "device": "Tesla T4",
+ "torch_version": "2.14.1+cu130",
+ "transformers_version": "5.22.1"
 }
