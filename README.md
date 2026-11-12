@@ -15,9 +15,9 @@ The last cell downloads the results as a zip file.
 
 | Profile | What runs | Estimated time on a T4 |
 |---|---|---|
-| `quick` | A wiring check. Its scores are not study results. | 15 minutes |
-| `midterm` | The conditions in the midterm report | 2.5 hours |
-| `full` | `midterm`, a wider decoder on ConvNeXt features, and a fine-tuned BLIP large | 4 hours |
+| `quick` | A wiring check. Its scores are not study results. | 15 to 20 minutes |
+| `midterm` | The conditions in the midterm report | 3 to 4 hours |
+| `full` | `midterm`, a wider decoder on ConvNeXt features, and a fine-tuned BLIP large | 5 to 6 hours |
 
 The notebook calls one command, which also runs on a local GPU:
 
