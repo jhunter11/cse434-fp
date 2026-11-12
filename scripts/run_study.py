@@ -134,8 +134,53 @@ def main(argv=None):
                  "--model-name", name, "--variant", variant, "--seed", seed,
                  "--feature-cache", work / f"features-{encoder}.pt", *extra])
 
-    for family, base, extra in [] if args.skip_finetune else profile["finetunes"]:
-        seeds = args.finetune_seeds[:1] if "--single-seed" in extra or args.profile == "quick" else args.finetune_seeds
+    def score_and_draw(label, out, patterns, bootstrap, donor_rules):
+        """Score the prediction files and draw every output below ``out``."""
+        out_results, out_report = out / "results", out / "report"
+        for folder in (out_results, out_report / "figures"):
+            folder.mkdir(parents=True, exist_ok=True)
+        gap = [SCRIPTS / "grounding_gap.py", "--manifest", manifest, "--split", "val", "--image-ids", CONFIRM_IDS,
+               "--predictions", *patterns, "--bootstrap-samples", bootstrap]
+        run(f"{label}Score every caption on its own image and on other images",
+            [*gap, "--output", out_results / "grounding-gap.json", "--per-image-output", out / "per-image.json"])
+        if donor_rules:
+            run(f"{label}Pair images by CLIP similarity",
+                [SCRIPTS / "donor_rules.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS,
+                 "--output-dir", out])
+            (out_results / "donor-rules.json").write_text((out / "donor-rules.json").read_text(encoding="utf-8"),
+                                                          encoding="utf-8")
+            for rule in ("nearest", "farthest"):
+                run(f"{label}Score on the {rule} other image",
+                    [*gap, "--donor-maps", out / f"donors-{rule}.json",
+                     "--output", out_results / f"grounding-gap-{rule}.json"])
+        (out_results / "decoder-training.json").write_text(
+            json.dumps(training_summary(work, decoder_names), indent=1) + "\n", encoding="utf-8")
+        run(f"{label}Draw the figures and the results table",
+            [SCRIPTS / "make_midterm_figures.py", "--results", out_results, "--report", out_report,
+             "--image-format", "png"])
+        for suffix in ("pdf", "png"):
+            run(f"{label}Draw the caption gallery ({suffix})",
+                [SCRIPTS / "make_gallery.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS,
+                 "--predictions-dir", work, "--output", out / f"gallery.{suffix}"])
+
+    finetunes = [] if args.skip_finetune else profile["finetunes"]
+    preflight = work / "preflight"
+    if args.profile != "quick" and finetunes and not (preflight / "passed").is_file():
+        # A long run must not fail in its last stage. Run every later stage once on a tiny fine-tune first.
+        preflight.mkdir(parents=True, exist_ok=True)
+        smoke = preflight / "confirm-blip-base-ft-s0.jsonl"
+        if not smoke.is_file():
+            run("Preflight: fine-tune for one short epoch",
+                [SCRIPTS / "finetune_blip.py", "--manifest", manifest, "--search-ids", SEARCH_IDS,
+                 "--predict-ids", CONFIRM_IDS, "--run-dir", preflight / "run", "--output", smoke,
+                 "--model-name", "blip-base-ft-s0", "--epochs", "1", "--limit-train-images", "200",
+                 "--batch-size", args.finetune_batch_size])
+        score_and_draw("Preflight: ", preflight, [work / "confirm-*.jsonl", work / "val-*.jsonl", smoke], 100, True)
+        (preflight / "passed").write_text("ok\n", encoding="utf-8")
+        print("\nPreflight passed. Every later stage ran once. The long fine-tuning runs start now.", flush=True)
+
+    for family, base, extra in finetunes:
+        seeds =args.finetune_seeds[:1] if "--single-seed" in extra or args.profile == "quick" else args.finetune_seeds
         for seed in seeds:
             name = f"{family}-s{seed}"
             output = work / f"confirm-{name}.jsonl"
@@ -147,29 +192,8 @@ def main(argv=None):
                  "--model-name", name, "--base-model", base, "--seed", seed,
                  "--batch-size", args.finetune_batch_size, *[item for item in extra if item != "--single-seed"]])
 
-    gap = [SCRIPTS / "grounding_gap.py", "--manifest", manifest, "--split", "val", "--image-ids", CONFIRM_IDS,
-           "--predictions", work / "confirm-*.jsonl", work / "val-*.jsonl",
-           "--bootstrap-samples", profile["bootstrap"]]
-    run("Score every caption on its own image and on other images",
-        [*gap, "--output", results / "grounding-gap.json", "--per-image-output", work / "per-image.json"])
-    if profile["donor_rules"]:
-        run("Pair images by CLIP similarity",
-            [SCRIPTS / "donor_rules.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS, "--output-dir", work])
-        (results / "donor-rules.json").write_text((work / "donor-rules.json").read_text(encoding="utf-8"),
-                                                  encoding="utf-8")
-        for rule in ("nearest", "farthest"):
-            run(f"Score on the {rule} other image",
-                [*gap, "--donor-maps", work / f"donors-{rule}.json",
-                 "--output", results / f"grounding-gap-{rule}.json"])
-
-    (results / "decoder-training.json").write_text(
-        json.dumps(training_summary(work, decoder_names), indent=1) + "\n", encoding="utf-8")
-    run("Draw the figures and the results table",
-        [SCRIPTS / "make_midterm_figures.py", "--results", results, "--report", report, "--image-format", "png"])
-    for suffix in ("pdf", "png"):
-        run(f"Draw the caption gallery ({suffix})",
-            [SCRIPTS / "make_gallery.py", "--manifest", manifest, "--image-ids", CONFIRM_IDS,
-             "--predictions-dir", work, "--output", work / f"gallery.{suffix}"])
+    score_and_draw("", work, [work / "confirm-*.jsonl", work / "val-*.jsonl"], profile["bootstrap"],
+                   profile["donor_rules"])
     print(f"\nStudy profile '{args.profile}' finished in {(time.perf_counter() - started) / 60:.1f} minutes.")
     print(f"Tables and figures: {report}\nAggregate results: {results}\nGallery: {work / 'gallery.pdf'}")
     if args.profile == "quick":
