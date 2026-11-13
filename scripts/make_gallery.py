@@ -27,6 +27,8 @@ from captionbench.data import load_manifest, read_jsonl
 
 MODELS = [("confirm-decoder-plain-s17.jsonl", "Ours, plain", "#0072b2"),
           ("confirm-decoder-relation-s17.jsonl", "Ours, relation", "#56b4e9"),
+          ("confirm-decoder-mobile-beam-s17.jsonl", "Ours, mobile+beam", "#56b4e9"),
+          ("confirm-decoder-dinov2-beam-s17.jsonl", "Ours, DINOv2+beam", "#009e73"),
           ("val-blip-base.jsonl", "BLIP base", "#7a7a7a"),
           ("val-blip-large.jsonl", "BLIP large", "#444444"),
           ("confirm-blip-base-ft-s17.jsonl", "BLIP tuned", "#d55e00")]

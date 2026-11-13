@@ -15,6 +15,8 @@ Profiles:
 * ``midterm``: the conditions in the midterm report.
 * ``full``: ``midterm`` plus a wider decoder on ConvNeXt features and a
   fine-tuned BLIP large. Use a GPU with 16 GiB or more.
+* ``improve``: our decoders only, against released BLIP. It tests a wider
+  decoder, three stronger frozen encoders, and beam search. No fine-tuning.
 
 The test split stays sealed. No stage reads it.
 
@@ -58,6 +60,17 @@ PROFILES["full"] = {
     "decoders": [*PROFILES["midterm"]["decoders"],
                  ("decoder-convnext", "plain", ["--encoder", "convnext_base", "--width", "256", "--dropout", "0.3"])],
     "finetunes": [("blip-base-ft", "blip-base", []), ("blip-large-ft", "blip-large", ["--single-seed"])],
+}
+# Each family below is also captioned with three beams from the same weights (family name + "-beam").
+WIDE = ["--width", "256", "--dropout", "0.3"]
+PROFILES["improve"] = {
+    "zero_shot": ["generic", "blip-base", "blip-large"],
+    "decoders": [("decoder-plain", "plain", []), ("decoder-wide", "plain", WIDE),
+                 ("decoder-mobile", "plain", ["--encoder", "mobilenet_v3_large", *WIDE]),
+                 ("decoder-convnext", "plain", ["--encoder", "convnext_base", *WIDE]),
+                 ("decoder-dinov2", "plain", ["--encoder", "dinov2_base", *WIDE])],
+    "decoder_seeds": [17, 29, 43], "beams": 3,
+    "finetunes": [], "donor_rules": False, "bootstrap": 2000, "zero_shot_ids": CONFIRM_IDS,
 }
 
 
@@ -140,7 +153,11 @@ def main(argv=None):
             name = f"{family}-s{seed}"
             decoder_names.append(name)
             output = work / f"confirm-{name}.jsonl"
-            if output.is_file():
+            beam_name = f"{family}-beam-s{seed}"
+            beam_output = work / f"confirm-{beam_name}.jsonl"
+            beam = (["--beam-output", beam_output, "--beam-model-name", beam_name, "--beams", profile["beams"]]
+                    if profile.get("beams") else [])
+            if output.is_file() and (not beam or beam_output.is_file()):
                 repaired = repair_token_captions(output)
                 if repaired:
                     print(f"Joined {repaired} token-list captions in {output.name}", flush=True)
@@ -155,7 +172,7 @@ def main(argv=None):
                 [SCRIPTS / "train_decoder.py", "--manifest", manifest, "--search-ids", SEARCH_IDS,
                  "--predict-ids", CONFIRM_IDS, "--run-dir", work / "runs" / name, "--output", output,
                  "--model-name", name, "--variant", variant, "--seed", seed,
-                 "--feature-cache", work / f"features-{encoder}.pt", *extra])
+                 "--feature-cache", work / f"features-{encoder}.pt", *extra, *beam])
 
     def score_and_draw(label, out, patterns, bootstrap, donor_rules):
         """Score the prediction files and draw every output below ``out``."""

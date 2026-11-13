@@ -166,6 +166,45 @@ class CustomCaptionerTests(unittest.TestCase):
         generated = model.generate(self.features, 1, 2, max_new_tokens=3)
         torch.testing.assert_close(generated, torch.tensor([[1, 4, 4, 4], [1, 4, 4, 4]]))
 
+    def test_one_beam_gives_the_greedy_caption(self):
+        model = self.make_model("plain").eval()
+        greedy = model.generate(self.features, 1, 2, max_new_tokens=8)
+        beam = model.generate_beam(self.features, 1, 2, num_beams=1, max_new_tokens=8)
+        torch.testing.assert_close(beam, greedy)
+
+    def _caption_log_prob(self, model, features, tokens):
+        """Sum of token log-probabilities and generated length for one caption row (PAD excluded)."""
+        tokens = tokens[tokens.ne(0)][None]
+        log_probs = torch.log_softmax(model(features, tokens[:, :-1]), dim=-1)
+        picked = log_probs.gather(-1, tokens[:, 1:, None]).sum()
+        return picked.item(), tokens.shape[1] - 1
+
+    def test_beam_search_matches_exhaustive_search_when_the_beam_holds_every_prefix(self):
+        # Three free words (EOS, 3, 4) and two steps: at most 3 live prefixes, so 9 beams lose nothing.
+        model = self.make_model("plain").eval()
+        with torch.no_grad():
+            model.output_projection.bias[5:] = -1e4
+        beam = model.generate_beam(self.features, 1, 2, num_beams=9, max_new_tokens=2)
+        for row in range(2):
+            features = self.features[row:row + 1]
+            options = [[1, 2], *[[1, a, b] for a in (3, 4) for b in (2, 3, 4)]]
+            scores = []
+            for option in options:
+                total, length = self._caption_log_prob(model, features, torch.tensor(option))
+                scores.append(total / length)
+            best = options[max(range(len(options)), key=scores.__getitem__)]
+            self.assertEqual(beam[row][beam[row].ne(0)].tolist(), best)
+
+    def test_beam_search_pads_after_eos_and_restores_training_mode(self):
+        model = self.make_model("plain").train()
+        with torch.no_grad():
+            model.output_projection.weight.zero_()
+            model.output_projection.bias.fill_(-20)
+            model.output_projection.bias[2] = 20
+        generated = model.generate_beam(self.features, 1, 2, num_beams=3, max_new_tokens=5)
+        torch.testing.assert_close(generated, torch.tensor([[1, 2], [1, 2]]))
+        self.assertTrue(model.training)
+
     def test_relative_geometry_has_direction_distance_and_reverse_symmetry(self):
         relation = self.make_model("relation_only").visual_relation
         geometry = relation.relative_geometry(2, 2, torch.device("cpu"), torch.float32)

@@ -23,6 +23,7 @@ Near the end, a cell downloads the results as a zip file. The last cell releases
 | `quick` | A wiring check. Its scores are not study results. | 15 to 20 minutes |
 | `midterm` | The conditions in the midterm report | 3 to 4 hours |
 | `full` | `midterm`, a wider decoder on ConvNeXt features, and a fine-tuned BLIP large | 5 to 6 hours |
+| `improve` | Our decoders against released BLIP: a wider decoder, three stronger frozen encoders (MobileNetV3, ConvNeXt, DINOv2), and beam search. No fine-tuning. | 30 to 60 minutes, not measured |
 
 The notebook calls one command, which also runs on a local GPU:
 

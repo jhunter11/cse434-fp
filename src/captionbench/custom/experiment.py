@@ -471,8 +471,11 @@ def load_run(run_dir, device="cpu"):
     return model.to(device).eval(), Vocabulary.from_dict(metadata["vocabulary"]), checkpoint
 
 
-def predict_records(model, features, records, vocab, device="cpu", batch_size=32, max_new_tokens=24):
-    """Generate one caption per image using features, BOS, and previous predictions."""
+def predict_records(model, features, records, vocab, device="cpu", batch_size=32, max_new_tokens=24, num_beams=1):
+    """Generate one caption per image using features, BOS, and previous predictions.
+
+    ``num_beams=1`` is greedy decoding. A larger value uses beam search.
+    """
     if batch_size < 1:
         raise ValueError("batch_size must be positive")
     model.to(device).eval()
@@ -481,8 +484,12 @@ def predict_records(model, features, records, vocab, device="cpu", batch_size=32
         for start in range(0, len(records), batch_size):
             batch = records[start:start + batch_size]
             ids = [record["image_id"] for record in batch]
-            generated = model.generate(torch.stack([features[image_id] for image_id in ids]).to(device),
-                                       vocab.bos_id, vocab.eos_id, max_new_tokens=max_new_tokens)
+            grids = torch.stack([features[image_id] for image_id in ids]).to(device)
+            if num_beams == 1:
+                generated = model.generate(grids, vocab.bos_id, vocab.eos_id, max_new_tokens=max_new_tokens)
+            else:
+                generated = model.generate_beam(grids, vocab.bos_id, vocab.eos_id, num_beams=num_beams,
+                                                max_new_tokens=max_new_tokens)
             for image_id, tokens in zip(ids, generated.cpu().tolist()):
                 predictions[image_id] = vocab.decode(tokens)
     return predictions

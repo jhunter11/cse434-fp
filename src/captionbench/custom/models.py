@@ -343,3 +343,55 @@ class Captioner(nn.Module):
         finally:
             self.train(was_training)
         return tokens
+
+    @torch.no_grad()
+    def generate_beam(self, features, bos_id, eos_id, num_beams=3, max_new_tokens=24, length_penalty=1.0):
+        """Beam search. Return the best caption per image in the layout of ``generate``.
+
+        Beams compete on the sum of token log-probabilities. A finished beam keeps
+        its score. The final choice per image is the beam with the highest
+        ``sum / length ** length_penalty``, where length counts EOS. One beam gives
+        the greedy caption.
+        """
+        if num_beams < 1:
+            raise ValueError("num_beams must be positive.")
+        if not 0 <= max_new_tokens <= self.config.max_length - 1:
+            raise ValueError("max_new_tokens must be between 0 and config.max_length - 1.")
+        if not (0 <= bos_id < self.vocab_size and 0 <= eos_id < self.vocab_size):
+            raise ValueError("BOS and EOS must be vocabulary IDs.")
+        if bos_id == self.pad_id or eos_id == self.pad_id or bos_id == eos_id:
+            raise ValueError("BOS, EOS, and PAD must have distinct IDs.")
+        batch, device = features.shape[0], features.device
+        expanded = features.repeat_interleave(num_beams, dim=0)
+        tokens = torch.full((batch * num_beams, 1), bos_id, dtype=torch.long, device=device)
+        scores = torch.full((batch, num_beams), -torch.inf, device=device)
+        scores[:, 0] = 0.0  # every beam starts from the same BOS, so only one may expand first
+        finished = torch.zeros(batch * num_beams, dtype=torch.bool, device=device)
+        lengths = torch.zeros(batch * num_beams, device=device)
+        offsets = (torch.arange(batch, device=device) * num_beams)[:, None]
+        was_training = self.training
+        self.eval()
+        try:
+            for _ in range(max_new_tokens):
+                log_probs = torch.log_softmax(self(expanded, tokens)[:, -1].float(), dim=-1)
+                log_probs[:, [self.pad_id, bos_id]] = -torch.inf
+                # A finished beam continues with PAD only, at no cost.
+                log_probs[finished] = -torch.inf
+                log_probs[finished, self.pad_id] = 0.0
+                candidates = (scores.reshape(-1, 1) + log_probs).reshape(batch, -1)
+                scores, flat = candidates.topk(num_beams, dim=-1)
+                source = (flat.div(self.vocab_size, rounding_mode="floor") + offsets).reshape(-1)
+                next_token = (flat % self.vocab_size).reshape(-1)
+                lengths = lengths[source] + (~finished[source]).float()
+                finished = finished[source] | next_token.eq(eos_id)
+                tokens = torch.cat((tokens[source], next_token[:, None]), dim=1)
+                if finished.all():
+                    break
+        finally:
+            self.train(was_training)
+        normalized = scores / lengths.reshape(batch, num_beams).clamp(min=1.0) ** length_penalty
+        best = normalized.argmax(dim=-1) + offsets.squeeze(1)
+        chosen = tokens[best]
+        # A losing beam can run longer than every winner. Drop the columns that hold PAD in every row.
+        used = int(chosen.ne(self.pad_id).sum(dim=1).max())
+        return chosen[:, :used]
