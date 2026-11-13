@@ -124,7 +124,7 @@ model). Figure~\ref{fig:system} shows the design. The protocol has four steps.
 (a) \emph{Image-blind control}: the fixed caption ``a photo of a person in a scene''.
 (b) \emph{Our decoders, trained from scratch}: a two-layer Transformer decoder (width 128,
 four heads, 1.6M parameters) attends over the 49 cells of a frozen ResNet18
-grid. The \emph{relation} variant adds self-attention among the cells. Training used AdamW (learning rate $9\times10^{-4}$ plain, $1.2\times10^{-3}$ relation;
+grid (Figure~\ref{fig:arch}). The \emph{relation} variant adds self-attention among the cells. Training used AdamW (learning rate $9\times10^{-4}$ plain, $1.2\times10^{-3}$ relation;
 batch 128, 12 epochs), the best epoch by search-set loss, greedy decoding, and
 seeds 17, 29, and 43.
 (c) \emph{Published BLIP, as released} [4]: the base and large captioning
@@ -327,6 +327,52 @@ appears on other images and the part that needs the own image.}
 with the lowest search loss (epoch 5 to 7).}
 \label{fig:curves}
 \end{minipage}
+\end{figure}
+
+\clearpage
+\section*{Appendix B: Our Decoder}
+
+\begin{figure}[h]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[font=\footnotesize,
+  frozen/.style={draw=ink, rounded corners=2pt, fill=soft, align=center, inner sep=3pt, minimum height=13mm, text width=25mm},
+  ours/.style={draw=own, line width=0.9pt, rounded corners=2pt, fill=own!8, align=center, inner sep=3pt, minimum height=13mm, text width=25mm},
+  io/.style={draw=ink, dashed, rounded corners=2pt, align=center, inner sep=3pt, minimum height=13mm, text width=21mm},
+  arr/.style={-{Stealth[length=1.8mm]}, draw=ink, line width=0.6pt}]
+% image path
+\node[io] (photo) at (0,2.6) {Photo\\$224\times224$ pixels};
+\node[frozen] (enc) at (3.3,2.6) {\textbf{Image encoder}\\ResNet18, pretrained,\\\textbf{frozen}};
+\node[ours] (proj) at (6.7,2.6) {\textbf{Project the cells}\\$7\times7$ cells, 512 $\rightarrow$ 128 numbers, plus position};
+\node[ours, dashed] (rel) at (10.1,2.6) {\textbf{Relation layer}\\cells read other cells\\(relation only)};
+% text path
+\node[io] (words) at (0,-0.4) {Words so far\\\texttt{<start> a dog}};
+\node[ours] (emb) at (3.3,-0.4) {\textbf{Word embedding}\\plus word position};
+\node[ours] (self) at (6.7,-0.4) {\textbf{Self-attention}\\each word reads the\\earlier words};
+\node[ours] (cross) at (10.1,-0.4) {\textbf{Cross-attention}\\each word reads the\\49 image cells};
+\node[ours] (ffn) at (13.5,-0.4) {\textbf{Feed-forward}\\two linear layers};
+\node[ours] (out) at (17.1,-0.4) {\textbf{Word scores}\\linear layer, softmax\\over 4,448 words};
+\node[io] (next) at (17.1,2.6) {Next word\\\texttt{runs}};
+\node[draw=own, line width=0.6pt, dashed, rounded corners=3pt, fit=(self)(cross)(ffn), inner sep=6pt,
+      label={[text=own]below:Decoder layer, repeated 2 times}] (layer) {};
+\draw[arr] (photo) -- (enc);
+\draw[arr] (enc) -- (proj);
+\draw[arr] (proj) -- (rel);
+\draw[arr] (rel) -- node[right] {49 image cells} (cross);
+\draw[arr] (words) -- (emb);
+\draw[arr] (emb) -- (self);
+\draw[arr] (self) -- (cross);
+\draw[arr] (cross) -- (ffn);
+\draw[arr] (ffn) -- (out);
+\draw[arr] (out) -- (next);
+\draw[arr] (next.north) -- ++(0,0.6) -| node[pos=0.25, above] {append the word and repeat until \texttt{<end>}} (-1.6,2.6) |- (words.west);
+\end{tikzpicture}}
+\caption{Our decoder, one word at a time. Blue boxes hold the 1.6M parameters that we train from
+scratch on Flickr8k. The grey encoder is pretrained on ImageNet and never trained by us. The dashed blue
+box exists in the \emph{relation} variant only. The \emph{plain} variant passes the projected cells straight to cross-attention.
+BLIP [4] has the same two parts, an image encoder and a text decoder with cross-attention, but both are
+far larger and both were pretrained on image-text pairs.}
+\label{fig:arch}
 \end{figure}
 
 \clearpage

@@ -62,7 +62,9 @@ PROFILES["full"] = {
     "finetunes": [("blip-base-ft", "blip-base", []), ("blip-large-ft", "blip-large", ["--single-seed"])],
 }
 # Each family below is also captioned with three beams from the same weights (family name + "-beam").
-WIDE = ["--width", "256", "--dropout", "0.3"]
+# The plain decoder reaches its lowest search loss at epoch 6 or 7 of 12 and overfits after that.
+# The wide decoders have more dropout and may peak later, so they get 30 epochs. Each run keeps its best epoch.
+WIDE = ["--width", "256", "--dropout", "0.3", "--epochs", "30"]
 PROFILES["improve"] = {
     "zero_shot": ["generic", "blip-base", "blip-large"],
     "decoders": [("decoder-plain", "plain", []), ("decoder-wide", "plain", WIDE),
