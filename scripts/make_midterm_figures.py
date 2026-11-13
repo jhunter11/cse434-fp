@@ -29,6 +29,14 @@ FAMILIES = [("generic", "Image-blind control"), ("decoder-plain", "Decoder, plai
             ("decoder-relation", "Decoder, relation"), ("decoder-convnext", "Decoder, ConvNeXt grid"),
             ("blip-base", "BLIP base, zero-shot"), ("blip-large", "BLIP large, zero-shot"),
             ("blip-base-ft", "BLIP base, fine-tuned"), ("blip-large-ft", "BLIP large, fine-tuned")]
+# Who made each model. The table prints this before every condition name, so a reader
+# never has to guess whether a row is our work or a published research model.
+ORIGIN = {"generic": "Control", "decoder-plain": "Ours", "decoder-relation": "Ours", "decoder-convnext": "Ours",
+          "blip-base": "Published", "blip-large": "Published",
+          "blip-base-ft": "Fine-tuned by us", "blip-large-ft": "Fine-tuned by us"}
+TABLE_NAMES = {"generic": "one fixed caption", "decoder-plain": "decoder, plain", "decoder-relation": "decoder, relation",
+               "decoder-convnext": "decoder, ConvNeXt grid", "blip-base": "BLIP base, as released",
+               "blip-large": "BLIP large, as released", "blip-base-ft": "BLIP base", "blip-large-ft": "BLIP large"}
 INK, MUTED, GRID = "#1f2933", "#52606d", "#d9dee3"
 MATCHED, MISMATCHED = "#0072b2", "#e69f00"
 STYLE, GROUND = "#e69f00", "#0072b2"
@@ -75,7 +83,7 @@ def style(axis):
 
 def blind_share_figure(rows, path):
     keys = [key for key, _ in FAMILIES if key in rows]
-    short = {"generic": "Blind\nctrl.", "decoder-plain": "Dec.\nplain", "decoder-relation": "Dec.\nrel.",
+    short = {"generic": "Blind\nctrl.", "decoder-plain": "Ours\nplain", "decoder-relation": "Ours\nrel.",
              "blip-base": "BLIP\nbase", "blip-large": "BLIP\nlarge", "blip-base-ft": "BLIP\ntuned"}
     figure, axes = plt.subplots(1, 4, figsize=(7.0, 1.8))
     for axis, (metric, label) in zip(axes, METRICS, strict=True):
@@ -145,9 +153,10 @@ def table(rows, path):
     lines = []
     decoders = [key for key, _ in FAMILIES if key in rows and key.startswith("decoder-")]
     breaks = {"generic", *decoders[-1:]}
-    for key, label in FAMILIES:
+    for key, _ in FAMILIES:
         if key not in rows:
             continue
+        label = f"\\emph{{{ORIGIN[key]}:}} {TABLE_NAMES[key]}"
         cells = []
         for metric, _ in METRICS:
             cell = rows[key]["metrics"][metric]

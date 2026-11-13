@@ -99,9 +99,9 @@ adequate for blind or low-vision readers.
   arr/.style={-{Stealth[length=1.6mm]}, draw=ink, line width=0.5pt}]
 \node[box, text width=24mm] (data) at (0,0) {Flickr8k manifest\\train 6,000\\search 800\\confirmation 200\\test 1,000 (sealed)};
 \node[box, text width=36mm] (blind) at (4.3,1.5) {Image-blind control\\one fixed caption};
-\node[box, text width=36mm] (dec) at (4.3,0.5) {ResNet18 grid $\rightarrow$ decoder\\from scratch, 3 seeds};
-\node[box, text width=36mm] (blip) at (4.3,-0.5) {BLIP base and large\\zero-shot};
-\node[box, text width=36mm] (ft) at (4.3,-1.5) {BLIP base\\fine-tuned on train, 3 seeds};
+\node[box, text width=36mm] (dec) at (4.3,0.5) {Ours: ResNet18 grid $\rightarrow$ decoder\\from scratch, 3 seeds};
+\node[box, text width=36mm] (blip) at (4.3,-0.5) {Published: BLIP base, large\\as released (zero-shot)};
+\node[box, text width=36mm] (ft) at (4.3,-1.5) {BLIP base, fine-tuned by us\\on train, 3 seeds};
 \node[box, text width=17mm] (cap) at (8.1,0) {Captions for the 200 images};
 \node[box, text width=25mm, draw=own, line width=0.9pt] (own) at (11.0,0.75) {Score on\\\textbf{own image}};
 \node[box, text width=25mm, draw=other, line width=0.9pt] (oth) at (11.0,-0.75) {Score on \textbf{other}\\\textbf{image} (5 shifts)};
@@ -122,14 +122,14 @@ model). Figure~\ref{fig:system} shows the design. The protocol has four steps.
 \begin{enumerate}[leftmargin=1.5em,itemsep=2pt]
 \item \textbf{Generate captions under four conditions.}
 (a) \emph{Image-blind control}: the fixed caption ``a photo of a person in a scene''.
-(b) \emph{Decoders from scratch}: a two-layer Transformer decoder (width 128,
+(b) \emph{Our decoders, trained from scratch}: a two-layer Transformer decoder (width 128,
 four heads, 1.6M parameters) attends over the 49 cells of a frozen ResNet18
 grid. The \emph{relation} variant adds self-attention among the cells. Training used AdamW (learning rate $9\times10^{-4}$ plain, $1.2\times10^{-3}$ relation;
 batch 128, 12 epochs), the best epoch by search-set loss, greedy decoding, and
 seeds 17, 29, and 43.
-(c) \emph{Zero-shot BLIP} [4]: the released base and large captioning
-checkpoints, with three beams and at most 32 new tokens.
-(d) \emph{Fine-tuned BLIP base}: all weights, AdamW (learning rate $10^{-5}$,
+(c) \emph{Published BLIP, as released} [4]: the base and large captioning
+checkpoints, zero-shot, with three beams and at most 32 new tokens.
+(d) \emph{BLIP base, fine-tuned by us}: all weights, AdamW (learning rate $10^{-5}$,
 weight decay 0.05, batch 8), a one-cycle cosine schedule, and two epochs
 over the 30,000 training pairs, with seeds 17, 29, and 43. Decoding is the same as in (c).
 \item \textbf{Score on the own image.} One scorer computes corpus BLEU-4
@@ -169,7 +169,9 @@ Condition & own & blind\,\% & own & blind\,\% & own & blind\,\% & own & blind\,\
 \csname @@input\endcsname results-table.tex
 \bottomrule
 \end{tabular}
-\caption{The 200 confirmation images. \emph{own}: score on the caption's own
+\caption{The 200 confirmation images. \emph{Ours}: a decoder we built and trained.
+\emph{Published}: the research model BLIP [4] as released, our baseline.
+\emph{Fine-tuned by us}: BLIP base after our Flickr8k training. \emph{own}: score on the caption's own
 image (BLEU-4, METEOR $\times100$; CIDEr-D 0--10; CLIPScore 0--2.5).
 \emph{blind\,\%}: share of that score kept on other images. \emph{tokens}: mean caption length.}
 \label{tab:results}
@@ -213,18 +215,19 @@ rose from 0.72 to 0.81 while its other-image score fell from 0.47 to 0.43.
 METEOR is the exception: 21 of its 66 points of relative gain appear on other
 images too.
 
-\textbf{5. The relation layer did not help (negative result).} It reached
-17.7 BLEU-4 against 18.0 for the plain decoder (three seeds each). The paired
-bootstrap interval, $[-1.93, 1.34]$ points, includes zero. We stop that work.
+\textbf{5. Our decoders do not beat the published model (negative result).}
+Our plain decoder reached 18.0 BLEU-4 against 22.9 for published BLIP base, and our
+relation layer 17.7 (three seeds each). The paired
+interval for relation minus plain, $[-1.93, 1.34]$, includes zero. We stop that work.
 
 \begin{table}[h]
 \centering\footnotesize
 \begin{tabular}{@{}ll@{}}
 \toprule
-Decoder, plain (seed 17) & a woman in a black shirt and a woman is sitting on a cellphone \\
-BLIP base & a woman holding a sign \\
-BLIP large & there are two women holding a sign that says free hugs \\
-BLIP base, fine-tuned (seed 17) & two girls hold up a sign that says, ' happy free hugs '. \\
+\emph{Ours:} decoder, plain (seed 17) & a woman in a black shirt and a woman is sitting on a cellphone \\
+\emph{Published:} BLIP base & a woman holding a sign \\
+\emph{Published:} BLIP large & there are two women holding a sign that says free hugs \\
+\emph{Fine-tuned by us:} BLIP base (seed 17) & two girls hold up a sign that says, ' happy free hugs '. \\
 \bottomrule
 \end{tabular}
 \caption{Outputs for one confirmation photo: two women hold signs that offer
@@ -234,14 +237,13 @@ free hugs (our description). Seeds 29 and 43 of the fine-tuned model quote no si
 
 \textbf{Limits.} The set has 200 photos, and each trained condition has three seeds. The
 shares depend on how similar Flickr8k photos are, so they do not transfer to
-another dataset. No human rating supports any metric yet.
+another dataset. No human rating exists yet.
 
 \section{Next Steps}
 
 \textbf{Planned improvements.}
 (1) Record the blind share after every 500 fine-tuning steps.
-(2) Run the notebook's full profile: a ConvNeXt decoder and a fine-tuned BLIP large.
-(3) Add BERTScore and BLIP-2.
+(2) Add a ConvNeXt decoder, a fine-tuned BLIP large, BERTScore, and BLIP-2.
 
 \textbf{Evaluation strategy.}
 (1) We freeze this protocol and run it once on the 1,000 sealed test images.
@@ -250,9 +252,8 @@ test whether a metric with a low blind share agrees better with them.
 (3) Three team raters will score 100 photos on our tested, blinded rating forms.
 
 \textbf{Open questions.}
-Does a low blind share predict agreement with human ratings, or only
-sensitivity to n-grams? Does the fine-tuned model
-hallucinate more detail (Table~\ref{tab:examples}), and does any of the four metrics penalize it?
+Does a low blind share predict agreement with human ratings? Does the fine-tuned model
+hallucinate more detail (Table~\ref{tab:examples}), and does any metric penalize it?
 
 \vspace{3pt}\hrule\vspace{3pt}
 {\footnotesize\textbf{References.}
@@ -278,11 +279,11 @@ hallucinate more detail (Table~\ref{tab:examples}), and does any of the four met
 \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(lr){11-13}
 Condition & far & shift & near & far & shift & near & far & shift & near & far & shift & near \\
 \midrule
-Decoder, plain (3 seeds) & 20 & 26 & 65 & 51 & 56 & 83 & 8 & 14 & 65 & 57 & 67 & 90 \\
-Decoder, relation (3 seeds) & 14 & 26 & 69 & 48 & 55 & 82 & 6 & 15 & 63 & 59 & 68 & 91 \\
-BLIP base, zero-shot & 0 & 14 & 40 & 34 & 41 & 63 & 1 & 8 & 34 & 56 & 65 & 85 \\
-BLIP large, zero-shot & 6 & 10 & 37 & 35 & 42 & 61 & 3 & 7 & 30 & 51 & 60 & 82 \\
-BLIP base, fine-tuned (3 seeds) & 1 & 10 & 35 & 32 & 38 & 58 & 1 & 5 & 26 & 43 & 53 & 78 \\
+\emph{Ours:} decoder, plain (3 seeds) & 20 & 26 & 65 & 51 & 56 & 83 & 8 & 14 & 65 & 57 & 67 & 90 \\
+\emph{Ours:} decoder, relation (3 seeds) & 14 & 26 & 69 & 48 & 55 & 82 & 6 & 15 & 63 & 59 & 68 & 91 \\
+\emph{Published:} BLIP base, as released & 0 & 14 & 40 & 34 & 41 & 63 & 1 & 8 & 34 & 56 & 65 & 85 \\
+\emph{Published:} BLIP large, as released & 6 & 10 & 37 & 35 & 42 & 61 & 3 & 7 & 30 & 51 & 60 & 82 \\
+\emph{Fine-tuned by us:} BLIP base (3 seeds) & 1 & 10 & 35 & 32 & 38 & 58 & 1 & 5 & 26 & 43 & 53 & 78 \\
 \bottomrule
 \end{tabular}
 \caption{Blind share (\%) under three rules for the other image. \emph{far}: the
