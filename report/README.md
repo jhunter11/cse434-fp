@@ -13,4 +13,4 @@ The first command needs the local Flickr8k files and the prediction files.
 The second command needs only the tracked files in `results/midterm`.
 It writes the figures and `results-table.tex`.
 
-Edit the `\teamname` and `\roles` lines at the top of `midterm.tex` before you submit.
+The `\teamname` and `\roles` lines at the top of `midterm.tex` set the title block. `\roles` lists the three names with no roles. Add roles there if the course requires them.
